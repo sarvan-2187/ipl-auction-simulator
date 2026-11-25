@@ -66,7 +66,10 @@ The pool is automatically enlarged if there are many teams. Purse (default ₹12
 ```bash
 npm run fetch-data          # re-pulls squads, retentions, photos and logos from iplt20.com
 npm run fetch-data -- --force   # re-download every image
+npm run rerate                  # recalculate ratings offline from the cached stats (no downloads, under a second)
 ```
+
+Manual ratings live in `RATING_OVERRIDE` in `scripts/ratings.mjs` (currently Hardik Pandya 96, Andre Russell 95). The best 62 players are spread evenly from 99 to 90 (`ELITE`), and everyone else is capped at 89.
 
 The script reads the public squad feeds behind iplt20.com team pages (seasons 2021–2026), each player's IPL career stats, and the IPL 2027 retention list (used only for capped status, age and as a rating floor). It also tries Wikipedia for players with no official photo. Stats are cached in `scripts/.cache`.
 
