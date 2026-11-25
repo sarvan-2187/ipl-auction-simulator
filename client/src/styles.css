@@ -459,7 +459,7 @@ img { display: block; }
   .bidbox .amount { font-size: 50px; }
   .bidbox .leader b { font-size: 22px; }
   .timer-num { font-size: 52px; }
-  .bid-btn small { display: none; }
+  .bid-btn small { display: block; font-size: 10px; letter-spacing: 0.03em; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pinfo { border-radius: 0 0 var(--radius) var(--radius); padding: 16px; gap: 12px; overflow: visible; }
   .pname { font-size: 38px; }
   .facts { grid-template-columns: repeat(3, 1fr); }
@@ -569,7 +569,7 @@ img { display: block; }
 
   .controls { position: static; grid-template-columns: 84px minmax(0, 1fr) 84px; gap: 6px; padding: 6px; border-radius: 14px; background: var(--panel); }
   .bid-btn { height: 50px; font-size: 26px; border-radius: 14px; }
-  .bid-btn small { display: none; }
+  .bid-btn small { display: block; font-size: 10px; letter-spacing: 0.03em; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pass-btn { min-width: 0; height: 50px; padding: 0 6px; font-size: 14px; }
   .jump { gap: 4px; }
   .jump button { height: auto; font-size: 11px; padding: 0 4px; }

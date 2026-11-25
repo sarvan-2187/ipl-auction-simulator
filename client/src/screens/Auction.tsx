@@ -44,10 +44,33 @@ function blocker(room: RoomState, team: TeamState | undefined, amount: number | 
   const after = roleCounts(team.squad); after[role]++;
   const need = unmet(after, s.roleMin);
   const needTotal = Object.values(need).reduce((a, b) => a + (b || 0), 0);
-  if (needTotal > s.maxSquad - team.squad.length - 1) return `Need ${Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ')}`;
-  const slotsAfter = Math.max(0, s.minSquad - team.squad.length - 1, needTotal);
-  if (team.purse - amount < slotsAfter * 30) return 'Low purse';
+  const needList = Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ');
+  const slotsLeft = s.maxSquad - team.squad.length - 1;
+  if (needTotal > slotsLeft) return `Need ${needList} · only ${slotsLeft + 1} slot${slotsLeft ? 's' : ''} left`;
+  // money: keep at least 30L for every player you still have to buy
+  const minPlayers = Math.max(0, s.minSquad - team.squad.length - 1);
+  const mustBuy = Math.max(minPlayers, needTotal);
+  const reserve = mustBuy * 30;
+  if (team.purse - amount < reserve) {
+    const why = needTotal >= minPlayers && needTotal > 0 ? `for ${needList}` : `for ${mustBuy} more player${mustBuy > 1 ? 's' : ''}`;
+    return `Save ${money(reserve)} · ${why}`;
+  }
   return null;
+}
+
+// What your squad still has to buy, and the money to keep for it (shown under the Bid button)
+function squadNeeds(room: RoomState, team: TeamState) {
+  const s = room.settings;
+  const need = unmet(roleCounts(team.squad), s.roleMin);
+  const needTotal = Object.values(need).reduce((a, b) => a + (b || 0), 0);
+  const mustBuy = Math.max(needTotal, s.minSquad - team.squad.length);
+  if (mustBuy <= 0) return null;
+  // only when it matters: money is getting tight, or role needs are filling the open slots
+  const tightMoney = team.purse - mustBuy * 30 < 500;
+  const tightSlots = needTotal > 0 && needTotal >= s.maxSquad - team.squad.length - 2;
+  if (!tightMoney && !tightSlots) return null;
+  const list = needTotal ? Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ') : `${mustBuy} more`;
+  return `Still need ${list} · keep ${money(mustBuy * 30)}`;
 }
 
 export default function Auction({ room }: { room: RoomState }) {
@@ -207,8 +230,14 @@ export default function Auction({ room }: { room: RoomState }) {
                 {iPassed ? 'Passed' : 'Pass'}
               </button>
               <button className="bid-btn" onClick={() => bid()} disabled={!!block} aria-label={block ? `Bid unavailable: ${block}` : `Bid ${money(next)}`}>
-                {block === 'Waiting' ? 'Next player…' : block ? block : `Bid ${money(next)}`}
-                <small>{block ? (lot?.leader === myTeam.code && lot.status === 'live' ? 'Highest bidder · hold your nerve' : ' ') : 'Space / Enter'}</small>
+                {block === 'Waiting' ? 'Next player…' : block ? block.split(' · ')[0] : `Bid ${money(next)}`}
+                <small>
+                  {block && block.includes(' · ')
+                    ? block.split(' · ').slice(1).join(' · ')
+                    : lot?.leader === myTeam.code && lot.status === 'live'
+                      ? 'Highest bidder · hold your nerve'
+                      : squadNeeds(room, myTeam) || (block ? '\u00a0' : 'Space / Enter')}
+                </small>
               </button>
               <div className="jump">
                 <JumpBtn label="+50L" extra={50} next={next} room={room} team={myTeam} onBid={bid} disabled={!!block} />

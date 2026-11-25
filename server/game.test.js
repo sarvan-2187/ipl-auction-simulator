@@ -105,3 +105,23 @@ test('setRole only allows eligible roles and changes the role used', () => {
   assert.throws(() => r.setRole('h', bat.id, 'BOWL'), /can't play/);
   assert.throws(() => r.setRole('f', ar.id, 'AR'), /Not in your squad/);
 });
+
+test('user report: 1 Cr left, need 1 AR + 2 WK -> 30L bowler blocked with a clear reason, keeper allowed', () => {
+  const r = new Room('PURSE', 'h');
+  r.join('h', 'Host'); r.join('f', 'F'); r.pickTeam('h', 'PBKS'); r.pickTeam('f', 'MI');
+  r.updateSettings('h', { maxSquad: 15, minSquad: 11, maxOverseas: 5 });
+  r.start('h', 0);
+  r.tick(3000);
+  const all = [...PLAYER_BY_ID.values()];
+  const pick = (role, n) => all.filter((p) => p.role === role && p.roles.length === 1 && !p.overseas).slice(0, n);
+  const team = r.teams.PBKS;
+  team.purse = 100;
+  team.squad = [...pick('BAT', 5).map((p) => ({ id: p.id, price: 100, role: 'BAT' })), ...pick('BOWL', 4).map((p) => ({ id: p.id, price: 100, role: 'BOWL' })), { id: all.find((p) => p.role === 'AR').id, price: 100, role: 'AR' }];
+  const bowler = all.find((p) => p.name === 'Ben Dwarshuis');
+  r.lot = { ...r.lot, id: bowler.id, base: 30, bid: null, leader: null, status: 'live', passed: [], history: [] };
+  const why = r.bidBlocker(team, 30);
+  assert.match(why, /keep ₹90 L for 1 AR, 2 WK/);
+  const keeper = all.find((p) => p.role === 'WK' && !p.overseas && p.base === 30);
+  r.lot = { ...r.lot, id: keeper.id };
+  assert.equal(r.bidBlocker(team, 30), null);
+});

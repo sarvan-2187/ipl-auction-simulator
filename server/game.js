@@ -275,9 +275,15 @@ export class Room {
     const need = unmet(after, s.roleMin);
     const needTotal = Object.values(need).reduce((a, b) => a + b, 0);
     const slotsLeft = s.maxSquad - team.squad.length - 1;
-    if (needTotal > slotsLeft) return `Need ${Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ')}`;
-    const slotsAfter = Math.max(0, s.minSquad - team.squad.length - 1, needTotal);
-    if (team.purse - amount < slotsAfter * MIN_BASE) return 'Not enough purse';
+    const needList = Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ');
+    if (needTotal > slotsLeft) return `Need ${needList}: only ${slotsLeft + 1} slots left`;
+    const minPlayers = Math.max(0, s.minSquad - team.squad.length - 1);
+    const mustBuy = Math.max(minPlayers, needTotal);
+    if (team.purse - amount < mustBuy * MIN_BASE) {
+      const lakhs = mustBuy * MIN_BASE;
+      const amt = lakhs < 100 ? `₹${lakhs} L` : `₹${+(lakhs / 100).toFixed(2)} Cr`;
+      return `Not enough purse: keep ${amt} ${needTotal >= minPlayers && needTotal ? `for ${needList}` : `for ${mustBuy} more players`}`;
+    }
     return null;
   }
 
