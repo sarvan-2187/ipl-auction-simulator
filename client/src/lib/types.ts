@@ -55,6 +55,7 @@ export interface Lot {
   leader: string | null;
   endsAt: number;
   history: { team: string; amount: number; t: number }[];
+  bidCount: number;
   status: 'live' | 'sold' | 'unsold';
   passed: string[];
   n: number;

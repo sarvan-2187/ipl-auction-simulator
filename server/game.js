@@ -17,7 +17,8 @@ export const DEFAULT_SETTINGS = {
 };
 export const POOL_SIZES = { blitz: 60, quick: 120, standard: 220, full: Infinity };
 const MIN_BASE = 30;
-const RESULT_PAUSE_MS = 3200;
+const SOLD_PAUSE_MS = 4800; // time for the gavel + ticket + stamp ceremony
+const UNSOLD_PAUSE_MS = 2600;
 const BOT_NAMES = 'ABCDEFGHIJ'.split('').map((l) => `Computer ${l}`);
 
 export function increment(bid) {
@@ -306,7 +307,7 @@ export class Room {
       this.addLog({ kind: 'unsold', id: lot.id, text: `${p.name} unsold` });
     }
     lot.closedAt = now;
-    this.nextLotAt = now + RESULT_PAUSE_MS;
+    this.nextLotAt = now + (lot.status === 'sold' ? SOLD_PAUSE_MS : UNSOLD_PAUSE_MS);
   }
 
   hostAction(byId, action, now = Date.now()) {
@@ -411,6 +412,7 @@ export class Room {
     const lot = this.lot && {
       ...this.lot,
       history: this.lot.history.slice(-8),
+      bidCount: this.lot.history.length,
       next: this.lot.status === 'live' ? this.nextBidAmount() : null,
       remaining: this.paused ? this.pausedRemaining : Math.max(0, this.lot.endsAt - now),
     };

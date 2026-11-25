@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import confetti from 'canvas-confetti';
+import SoldCeremony, { type CeremonyTags } from '../components/SoldCeremony';
 import { flagEmoji, getPlayer, getTeam, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
 import { call, memberId, useSocketEvent } from '../lib/socket';
 import type { Lot, Player, RoomState, TeamState } from '../lib/types';
@@ -70,16 +70,6 @@ export default function Auction({ room }: { room: RoomState }) {
       else if (lot.history.length > (p.bids ?? 0) && lot.id === p.id) {
         const last = lot.history[lot.history.length - 1];
         if (last?.team === myTeam?.code) sfx.myBid(); else sfx.bid();
-      }
-      if (lot.status !== 'live' && p.status === 'live' && lot.id === p.id) {
-        sfx.gavel();
-        if (lot.status === 'sold') {
-          sfx.sold();
-          const t = getTeam(lot.leader);
-          const colors = [t?.primary || '#f5c04a', t?.secondary || '#fff', '#f5c04a'];
-          const mine = lot.leader === myTeam?.code;
-          confetti({ particleCount: mine ? 180 : 90, spread: mine ? 100 : 70, origin: { y: 0.55 }, colors, scalar: 1.1, disableForReducedMotion: true });
-        } else sfx.unsold();
       }
     }
     prev.current = { id: lot?.id, bids: lot?.history.length ?? 0, status: lot?.status };
@@ -194,7 +184,7 @@ export default function Auction({ room }: { room: RoomState }) {
               <div className="muted">First lot in a moment…</div>
             </div>
           ) : (
-            <div className="stage" style={stageVars}>
+            <div className={`stage ${lot.status !== 'live' ? 'hammered' : ''}`} style={stageVars}>
               <AnimatePresence mode="popLayout">
                 <motion.div key={lot.id} className="pcard" initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ type: 'spring', stiffness: 160, damping: 22 }}>
                   <PlayerArt p={player} leader={lot.leader} />
@@ -207,14 +197,7 @@ export default function Auction({ room }: { room: RoomState }) {
               </div>
               <AnimatePresence>
                 {lot.status !== 'live' && (
-                  <motion.div className="result-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <motion.div className={`stamp ${lot.status}`} initial={{ scale: 2.4, opacity: 0, rotate: -20 }} animate={{ scale: 1, opacity: 1, rotate: -8 }} transition={{ type: 'spring', stiffness: 380, damping: 18 }}>
-                      <div className="word">{lot.status === 'sold' ? 'SOLD!' : 'UNSOLD'}</div>
-                      {lot.status === 'sold' && lot.leader && (
-                        <div className="to"><TeamLogo code={lot.leader} size={56} /> {lot.leader} · {money(lot.bid)}</div>
-                      )}
-                    </motion.div>
-                  </motion.div>
+                  <SoldCeremony key={`c-${lot.id}`} lot={lot} player={player} mine={!!myTeam && lot.leader === myTeam.code} roomCode={room.code} tags={ceremonyTags(room, lot, player)} />
                 )}
               </AnimatePresence>
             </div>
@@ -268,6 +251,16 @@ export default function Auction({ room }: { room: RoomState }) {
       {drawer && room.teams[drawer] && <SquadDrawer room={room} code={drawer} onClose={() => setDrawer(null)} />}
     </div>
   );
+}
+
+function ceremonyTags(room: RoomState, lot: Lot, p: Player): CeremonyTags {
+  if (lot.status !== 'sold' || lot.bid == null) return { record: false, steal: false, war: false };
+  const before = room.log.filter((l) => l.kind === 'sold' && l.id !== lot.id).map((l) => l.amount || 0);
+  return {
+    record: before.length >= 2 && lot.bid > Math.max(...before),
+    steal: p.rating >= 80 && lot.bid <= lot.base * 1.5,
+    war: (lot.bidCount ?? lot.history.length) >= 14,
+  };
 }
 
 function JumpBtn({ label, extra, next, room, team, onBid, disabled }: { label: string; extra: number; next: number | null; room: RoomState; team: TeamState; onBid: (x: number) => void; disabled: boolean }) {

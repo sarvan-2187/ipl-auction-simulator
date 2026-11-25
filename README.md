@@ -10,7 +10,8 @@ A real-time multiplayer IPL auction game for friends. Create a room, share the 5
 - **Computer players** (Computer A, Computer B, …) fill empty franchises when the host taps `+ CPU`
 - Works in phone portrait and landscape (landscape fits the whole auction on one screen)
 - Marquee sets → role sets → uncapped sets, with an optional **accelerated round** for unsold players
-- Jump bids (+50L / +1 Cr), Pass, keyboard shortcuts (Space = bid, P = pass), emoji reactions, sounds, SOLD stamps and confetti
+- Jump bids (+50L / +1 Cr), Pass, keyboard shortcuts (Space = bid, P = pass), emoji reactions and synthesized sounds
+- The hammer moment: gavel slam and stage shake, an official auction ticket flips up with the price counting up, then an ink-textured rubber stamp (SOLD / UNSOLD) slams onto it with splatter, light rays, confetti and crowd noise. Record buy / Steal / Bidding war badges, and a gold "Welcome to …" banner when you're the buyer
 - Results screen: best-XI strength ranking, most expensive buy, steal of the auction, and a "copy squads for WhatsApp" button
 
 ## Play locally
