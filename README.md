@@ -35,6 +35,16 @@ The server keeps rooms in memory, so it needs a host that runs a Node process wi
 - **Railway / Fly.io / any VPS**: build with `npm install && npm run build`, start with `npm start`. `PORT` is respected.
 - **From your own laptop**: run `npm start`, then expose it with `cloudflared tunnel --url http://localhost:3001` or `ngrok http 3001` and share the URL.
 
+### Keep it awake with UptimeRobot
+
+`GET /api/health` (also answers `HEAD`) returns:
+
+```json
+{"status":"ok","service":"ipl-auction","uptimeSeconds":5321,"rooms":1,"liveAuctions":1,"playersOnline":4,"version":"520cf0f","time":"…"}
+```
+
+In UptimeRobot: **Add New Monitor → HTTP(s)** (or **Keyword**, looking for `"status":"ok"`), URL `https://<your-app>.onrender.com/api/health`, interval **5 minutes**. That stops Render's free plan from sleeping. One service pinged 24/7 uses about 744 of the 750 free instance hours a month.
+
 ## Formats (host picks in the lobby)
 
 | Preset  | Players in pool | Squad (min–max) | Rough length with 4–5 friends |

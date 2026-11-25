@@ -18,7 +18,30 @@ app.use(compression());
 const LONG = { maxAge: '30d', immutable: true, index: false };
 for (const dir of ['assets', 'players', 'fonts', 'emoji', 'flags', 'teams']) app.use(`/${dir}`, express.static(path.join(DIST, dir), LONG));
 app.use(express.static(DIST, { maxAge: '5m', index: false }));
-app.get('/healthz', (_req, res) => res.json({ ok: true, rooms: rooms.size }));
+// Health check for UptimeRobot / Render. Cheap, never cached, works for HEAD and GET.
+// Keyword monitors can look for: "status":"ok"
+const STARTED = Date.now();
+function health(_req, res) {
+  let live = 0, players = 0;
+  for (const r of rooms.values()) {
+    if (r.phase === 'auction') live++;
+    for (const m of r.members.values()) if (m.connected && !m.bot) players++;
+  }
+  res.set('Cache-Control', 'no-store, max-age=0');
+  res.json({
+    status: 'ok',
+    service: 'ipl-auction',
+    uptimeSeconds: Math.round((Date.now() - STARTED) / 1000),
+    rooms: rooms.size,
+    liveAuctions: live,
+    playersOnline: players,
+    version: (process.env.RENDER_GIT_COMMIT || 'dev').slice(0, 7),
+    time: new Date().toISOString(),
+  });
+}
+app.get('/api/health', health);
+app.get('/healthz', health);
+app.all('/api/*', (_req, res) => res.status(404).json({ status: 'error', error: 'Not found' }));
 app.get('*', (_req, res) => res.sendFile(path.join(DIST, 'index.html'), (err) => err && res.status(404).send('Run "npm run build" first, or use "npm run dev".')));
 
 const server = http.createServer(app);
