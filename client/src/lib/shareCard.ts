@@ -26,6 +26,13 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
+// largest font size (down to `min`) at which `text` fits in `max` px
+function fitFont(ctx: CanvasRenderingContext2D, text: string, max: number, start: number, min: number, weight = 800) {
+  let size = start;
+  ctx.font = `${weight} ${size}px Geist, sans-serif`;
+  while (size > min && ctx.measureText(text).width > max) { size -= 2; ctx.font = `${weight} ${size}px Geist, sans-serif`; }
+}
+
 function fitText(ctx: CanvasRenderingContext2D, text: string, max: number) {
   if (ctx.measureText(text).width <= max) return text;
   let t = text;
@@ -60,7 +67,7 @@ export async function renderXICard(team: TeamState, ids: number[], ownerName: st
   ctx.fillText('PLAYING XI', 190, 84);
   (ctx as any).letterSpacing = '0px';
   ctx.fillStyle = '#fff';
-  ctx.font = '800 54px Geist, sans-serif';
+  fitFont(ctx, info.name, 560, 54, 34);
   ctx.fillText(fitText(ctx, info.name, 560), 188, 136);
   ctx.fillStyle = '#a3a3a3';
   ctx.font = '500 26px Geist, sans-serif';
@@ -216,4 +223,127 @@ export async function shareOrDownload(blob: Blob, filename: string, text: string
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 5000);
   return 'downloaded';
+}
+
+// Full squad card: cut-out faces on the team's colours (no ground), grouped by role
+export async function renderSquadCard(team: TeamState, ownerName: string, roomCode: string, purseTotal: number): Promise<Blob> {
+  await document.fonts.ready;
+  const info = getTeam(team.code)!;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d')!;
+  const money = (l: number) => (l < 100 ? `₹${l} L` : `₹${+(l / 100).toFixed(2)} Cr`);
+
+  // team background: colour gradient + the franchise pattern
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, info.primary);
+  bg.addColorStop(1, '#050505');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  const pattern = await load(`/teams/${team.code}-bg.svg`);
+  if (pattern) { ctx.globalAlpha = 0.18; ctx.drawImage(pattern, 0, 0, W, H); ctx.globalAlpha = 1; }
+  const shade = ctx.createLinearGradient(0, 0, 0, H);
+  shade.addColorStop(0, 'rgba(0,0,0,0.15)');
+  shade.addColorStop(1, 'rgba(0,0,0,0.65)');
+  ctx.fillStyle = shade;
+  ctx.fillRect(0, 0, W, H);
+
+  // header
+  const logo = await load(`/teams/${team.code}.svg`);
+  if (logo) ctx.drawImage(logo, 48, 40, 104, 104);
+  (ctx as any).letterSpacing = '4px';
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.font = '600 20px Geist, sans-serif';
+  ctx.fillText(`FULL SQUAD · ${team.squad.length} PLAYERS`, 172, 72);
+  (ctx as any).letterSpacing = '0px';
+  ctx.fillStyle = '#fff';
+  fitFont(ctx, info.name, 560, 52, 34);
+  ctx.fillText(fitText(ctx, info.name, 560), 170, 122);
+  ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.font = '500 24px Geist, sans-serif';
+  ctx.fillText(fitText(ctx, `Built by ${ownerName}`, 560), 172, 156);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '600 18px Geist, sans-serif';
+  ctx.fillText('SPENT', W - 48, 72);
+  ctx.fillStyle = '#f5c04a';
+  ctx.font = '800 44px Geist, sans-serif';
+  ctx.fillText(money(purseTotal - team.purse), W - 48, 116);
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.font = '500 20px Geist, sans-serif';
+  ctx.fillText(`${money(team.purse)} left`, W - 48, 148);
+  ctx.textAlign = 'left';
+
+  // tiles
+  const order: Role[] = ['WK', 'BAT', 'AR', 'BOWL'];
+  const list = team.squad
+    .map((e) => { const p = getPlayer(e.id); const role = (e.role || p.role) as Role; return { e, p, role, r: ratingAs(p, role) }; })
+    .sort((a, b) => order.indexOf(a.role) - order.indexOf(b.role) || b.r - a.r);
+  const n = list.length;
+  const cols = n <= 9 ? 3 : n <= 16 ? 4 : 5;
+  const rows = Math.ceil(n / cols);
+  const top = 196, bottom = H - 96, gap = 14, side = 48;
+  const tw = (W - side * 2 - gap * (cols - 1)) / cols;
+  const th = Math.min(tw * 1.32, (bottom - top - gap * (rows - 1)) / rows);
+  const imgs = await Promise.all(list.map((x) => { const src = playerPhoto(x.p); return src ? load(src) : Promise.resolve(null); }));
+  list.forEach((x, i) => {
+    const cx = side + (i % cols) * (tw + gap);
+    const cy = top + Math.floor(i / cols) * (th + gap);
+    const band = Math.max(54, th * 0.27);
+    ctx.save();
+    roundRect(ctx, cx, cy, tw, th, 16);
+    ctx.clip();
+    const tile = ctx.createLinearGradient(0, cy, 0, cy + th);
+    tile.addColorStop(0, 'rgba(255,255,255,0.16)');
+    tile.addColorStop(1, 'rgba(0,0,0,0.35)');
+    ctx.fillStyle = tile;
+    ctx.fillRect(cx, cy, tw, th);
+    const img = imgs[i];
+    const area = th - band;
+    if (img) {
+      // cut-out anchored to the bottom of the photo area, head and shoulders
+      const s = (area * 1.25) / img.height;
+      const w = img.width * s, h = img.height * s;
+      ctx.drawImage(img, cx + tw / 2 - w / 2, cy + area - h * 0.86, w, h);
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = `800 ${Math.round(area * 0.3)}px Geist, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(x.p.name.split(' ').map((w) => w[0]).slice(0, 2).join(''), cx + tw / 2, cy + area * 0.62);
+      ctx.textAlign = 'left';
+    }
+    // name band
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+    ctx.fillRect(cx, cy + th - band, tw, band);
+    ctx.restore();
+    const sz = Math.max(18, Math.min(26, tw / 8.5));
+    ctx.fillStyle = '#fff';
+    ctx.font = `400 ${sz}px "NType 82", Georgia, serif`;
+    ctx.fillText(fitText(ctx, x.p.name, tw - 20), cx + 10, cy + th - band + sz + 6);
+    ctx.font = `700 ${Math.round(sz * 0.62)}px Geist, sans-serif`;
+    ctx.fillStyle = 'rgba(255,255,255,0.65)';
+    ctx.fillText(`${x.role} ${x.r}${x.p.overseas ? ' · OS' : ''}`, cx + 10, cy + th - 12);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#f5c04a';
+    ctx.font = `800 ${Math.round(sz * 0.72)}px Geist, sans-serif`;
+    ctx.fillText(money(x.e.price), cx + tw - 10, cy + th - 12);
+    ctx.textAlign = 'left';
+  });
+
+  // footer
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.font = '600 20px Geist, sans-serif';
+  const c = { WK: 0, BAT: 0, AR: 0, BOWL: 0 } as Record<Role, number>;
+  list.forEach((x) => c[x.role]++);
+  ctx.fillText(`WK ${c.WK}  ·  BAT ${c.BAT}  ·  AR ${c.AR}  ·  BOWL ${c.BOWL}  ·  OS ${list.filter((x) => x.p.overseas).length}`, side, H - 44);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#f5c04a';
+  ctx.font = '700 22px Geist, sans-serif';
+  ctx.fillText(SITE, W - side, H - 56);
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.font = '500 16px Geist, sans-serif';
+  ctx.fillText(`IPL Auction Room · Room ${roomCode}`, W - side, H - 32);
+
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('render failed'))), 'image/png'));
 }

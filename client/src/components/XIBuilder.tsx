@@ -8,7 +8,7 @@ import { autoXI, MAX_OS, roleIn, suggestions, XI_SIZE, xiInfo } from '../lib/xi'
 import type { Player, Role, RoomState, TeamState } from '../lib/types';
 import { TeamLogo, initials, useToast } from './ui';
 import { sfx } from '../lib/sound';
-import { renderXICard, shareOrDownload, SITE } from '../lib/shareCard';
+import { renderSquadCard, renderXICard, shareOrDownload, SITE } from '../lib/shareCard';
 
 // y = row height on the ground; half = how far from centre the row may spread (the oval is narrower at the ends)
 const ROWS: { role: Role; label: string; y: number; half: number }[] = [
@@ -23,16 +23,18 @@ const short = (p: Player) => {
 };
 
 export default function XIBuilder({ room, team, readOnly = false, onDone }: { room: RoomState; team: TeamState; readOnly?: boolean; onDone?: () => void }) {
-  const [card, setCard] = useState<{ url: string; blob: Blob } | null>(null);
-  const [making, setMaking] = useState(false);
+  const [card, setCard] = useState<{ url: string; blob: Blob; kind: 'xi' | 'squad' } | null>(null);
+  const [making, setMaking] = useState<'xi' | 'squad' | null>(null);
   const owner = room.members.find((m) => m.id === team.ownerId)?.name || team.code;
-  const makeCard = async () => {
-    setMaking(true);
+  const makeCard = async (kind: 'xi' | 'squad') => {
+    setMaking(kind);
     try {
-      const blob = await renderXICard({ ...team, xi: ids }, ids, owner, room.code);
-      setCard({ url: URL.createObjectURL(blob), blob });
+      const blob = kind === 'xi'
+        ? await renderXICard({ ...team, xi: ids }, ids, owner, room.code)
+        : await renderSquadCard(team, owner, room.code, room.settings.purse);
+      setCard({ url: URL.createObjectURL(blob), blob, kind });
     } catch { toast('Could not create the image', true); }
-    setMaking(false);
+    setMaking(null);
   };
   const toast = useToast();
   const info0 = getTeam(team.code)!;
@@ -177,9 +179,14 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
             </div>
           )}
           {editable && ids.length > 0 && <div className="dim" style={{ fontSize: 12 }}>Tap a player on the ground to change his role or bench him.</div>}
-          {ids.length > 0 && (
-            <button className="btn btn-sm xi-share" onClick={makeCard} disabled={making}>{making ? 'Creating image…' : 'Share XI as image'}</button>
-          )}
+          <div className="row" style={{ gap: 8 }}>
+            {ids.length > 0 && (
+              <button className="btn btn-sm xi-share" onClick={() => makeCard('xi')} disabled={!!making}>{making === 'xi' ? 'Creating…' : 'Share XI'}</button>
+            )}
+            {squad.length > 0 && (
+              <button className="btn btn-sm xi-share" onClick={() => makeCard('squad')} disabled={!!making}>{making === 'squad' ? 'Creating…' : 'Share full squad'}</button>
+            )}
+          </div>
           {info.issues.length > 0 && (
             <div className="xi-issues">{info.issues.map((t) => <div key={t}>{t}</div>)}</div>
           )}
@@ -242,10 +249,12 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
           <>
             <motion.div className="drawer-back" style={{ zIndex: 80 }} onClick={() => { URL.revokeObjectURL(card.url); setCard(null); }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
             <motion.div className="share-modal" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} role="dialog" aria-label="Share your XI">
-              <img src={card.url} alt={`${info0.name} Playing XI`} />
+              <img src={card.url} alt={`${info0.name} ${card.kind === 'xi' ? 'Playing XI' : 'full squad'}`} />
               <div className="row" style={{ gap: 8 }}>
                 <button className="btn btn-gold" style={{ flex: 1 }} onClick={async () => {
-                  const r = await shareOrDownload(card.blob, `${team.code}-playing-xi.png`, `My ${info0.name} Playing XI: rated ${info.rating.toFixed(1)}. Build yours at https://${SITE}`);
+                  const r = card.kind === 'xi'
+                    ? await shareOrDownload(card.blob, `${team.code}-playing-xi.png`, `My ${info0.name} Playing XI: rated ${info.rating.toFixed(1)}. Build yours at https://${SITE}`)
+                    : await shareOrDownload(card.blob, `${team.code}-full-squad.png`, `My ${info0.name} squad from the IPL Auction Room. Build yours at https://${SITE}`);
                   if (r === 'downloaded') toast('Image saved');
                 }}>Share</button>
                 <button className="btn" onClick={() => { URL.revokeObjectURL(card.url); setCard(null); }}>Close</button>

@@ -81,8 +81,28 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
           </div>
         </motion.form>
       </div>
-      <footer className="credits">
-        Type: <b>Geist</b> by <a href="https://vercel.com/font" target="_blank" rel="noreferrer">Vercel</a> · <b>NType 82</b> serif by <a href="https://nothing.tech" target="_blank" rel="noreferrer">Nothing</a>
+      <footer className="site-foot">
+        <div className="disclaimer">
+          <div className="d-col">
+            <b>Fan-made, just for fun</b>
+            <p>A private, non-commercial auction game for friends. Not affiliated with, endorsed or sponsored by the Indian Premier League, the BCCI or any franchise.</p>
+          </div>
+          <div className="d-col">
+            <b>Names, logos and photos</b>
+            <p>Team names, logos and player photos are the property of their respective owners and are used here for identification only.</p>
+          </div>
+          <div className="d-col">
+            <b>Ratings and prices</b>
+            <p>Player ratings and base prices are estimates built from public IPL stats. They are not official valuations.</p>
+          </div>
+          <div className="d-col">
+            <b>No real money</b>
+            <p>All purses and bids are virtual. There is no betting, payment or prize of any kind.</p>
+          </div>
+        </div>
+        <div className="credits">
+          Type: <b>Geist</b> by <a href="https://vercel.com/font" target="_blank" rel="noreferrer">Vercel</a> · <b>NType 82</b> serif by <a href="https://nothing.tech" target="_blank" rel="noreferrer">Nothing</a> · Flags by flag-icons
+        </div>
       </footer>
     </div>
   );
