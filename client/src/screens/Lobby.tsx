@@ -40,7 +40,7 @@ export default function Lobby({ room }: { room: RoomState }) {
   return (
     <div className="shell">
       <div className="topbar">
-        <button className="icon-btn" onClick={() => { leaveRoom(); history.replaceState(null, '', '/'); }} aria-label="Leave room" title="Leave room">←</button>
+        <button className="icon-btn" onClick={leaveRoom} aria-label="Leave room" title="Leave room">←</button>
         <div className="grow">
           <div className="eyebrow">Auction lobby</div>
           <div className="display" style={{ fontSize: 34 }}>Pick your franchise</div>

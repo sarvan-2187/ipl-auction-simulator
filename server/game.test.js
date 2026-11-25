@@ -55,3 +55,19 @@ test('full bot auction completes with legal squads', () => {
   console.log('sold', sold, 'sim minutes', (t / 60000).toFixed(1));
   assert.ok(sold > 60);
 });
+
+test('rematch returns the room to the lobby with the same people', () => {
+  const r = new Room('RM001', 'h');
+  r.join('h', 'Host'); r.join('f', 'Friend');
+  r.pickTeam('h', 'CSK'); r.pickTeam('f', 'MI');
+  r.start('h', 0);
+  r.hostAction('h', 'end', 1000);
+  assert.equal(r.phase, 'results');
+  assert.throws(() => r.rematch('f'), /host/);
+  r.rematch('h');
+  assert.equal(r.phase, 'lobby');
+  assert.equal(r.members.get('f').team, 'MI');
+  assert.deepEqual(r.teams, {});
+  r.start('h', 2000);
+  assert.equal(r.phase, 'auction');
+});

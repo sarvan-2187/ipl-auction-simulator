@@ -23,11 +23,16 @@ export default function App() {
   useEffect(() => { loadData().then(() => setReady(true)); }, []);
 
   // Auto-rejoin when opening /room/CODE and a name is already known (refresh / shared link)
+  // Once we're in a room (however we got there), the invite-link code is used up
+  useEffect(() => { if (room) setPendingCode(null); }, [room?.code]);
+
   useEffect(() => {
     if (!ready || !pendingCode || room) return;
     const name = getName();
     if (!name) return;
-    joinRoom(pendingCode, name).then((r) => { if (!r.ok) setPendingCode(null); });
+    const code = pendingCode;
+    setPendingCode(null); // join a link once; never auto-rejoin after leaving
+    joinRoom(code, name);
   }, [ready, pendingCode, room]);
 
   useEffect(() => {

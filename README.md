@@ -11,9 +11,8 @@ A real-time multiplayer IPL auction game for friends. Create a room, share the 5
 - Works in phone portrait and landscape (landscape fits the whole auction on one screen)
 - Marquee sets → role sets → uncapped sets, with an optional **accelerated round** for unsold players
 - Jump bids (+50L / +1 Cr), Pass, keyboard shortcuts (Space = bid, P = pass) and synthesized sounds
-- 3D emoji reactions that float up with the sender's name (a pop-up tray on phones), rate-limited against spam
-- The hammer moment: gavel slam and stage shake, an official auction ticket flips up with the price counting up, then an ink-textured rubber stamp (SOLD / UNSOLD) slams onto it with splatter, light rays, confetti and crowd noise. Record buy / Steal / Bidding war badges, and a gold "Welcome to …" banner when you're the buyer
-- Results screen: best-XI strength ranking, most expensive buy, steal of the auction, and a "copy squads for WhatsApp" button
+- The hammer moment: gavel slam and stage shake, an official auction ticket flips up with the price counting up, then an ink-textured rubber stamp (SOLD / UNSOLD) slams onto it with splatter, light rays, confetti and crowd noise. Record buy / Steal / Bidding war tags, and a gold "Welcome to …" banner when you're the buyer
+- Results screen: best-XI strength ranking, most expensive buy, steal of the auction, a "copy squads for WhatsApp" button, and **Play again** (host restarts in the same room with the same friends and franchise picks)
 
 ## Play locally
 
@@ -83,15 +82,6 @@ scripts/fetch-data.mjs data + image scraper
 
 ## Credits
 
-**Typography by [Nothing](https://nothing.tech).** The interface uses Nothing's own typefaces:
-
-- **Ndot 57**: the dot-matrix face for prices, the clock, headlines, player surnames and the SOLD stamp
-- **NType 82**: first names and editorial accents
-- **Lettera Mono** (Lineto), the monospace used across Nothing OS: buttons, labels and ticket serials
-- **Space Grotesk** (SIL OFL): body text, and the ₹ sign, which Ndot/NType don't include
-
-Font files come from the community collection [Return761/Nothing-Fonts](https://github.com/Return761/Nothing-Fonts), converted to WOFF2. See `client/public/fonts/CREDITS.md`. Ndot, NType and Lettera are proprietary and are used here only for a private, non-commercial game.
-
-**Emoji** are Microsoft's Fluent Emoji 3D (MIT) and **flags** are from flag-icons (MIT). Both are self-hosted so every phone and PC shows the same art, including Windows, which has no flag emoji.
+**Type:** [Geist](https://vercel.com/font) by Vercel (SIL OFL) for the whole interface, with **NType 82** by [Nothing](https://nothing.tech) as the serif accent on first names. Flags are from [flag-icons](https://github.com/lipis/flag-icons) (MIT). See `client/public/fonts/CREDITS.md`.
 
 Team names, logos and player photos belong to their owners (BCCI/IPL and the franchises). This repo is a private, non-commercial game for friends.

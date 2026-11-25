@@ -1,15 +1,9 @@
-/* Typography by Nothing (nothing.tech): Ndot 57 + NType 82, with Lettera Mono and Space Grotesk.
-   Font files live in /public/fonts — see /public/fonts/CREDITS.md. size-adjust normalises each
-   face to the old type scale so layouts keep their proportions. */
-@font-face { font-family: 'Ndot 57'; src: url('/fonts/Ndot57.woff2') format('woff2'); font-display: swap; size-adjust: 68%; }
-@font-face { font-family: 'NType 82'; src: url('/fonts/NType82.woff2') format('woff2'); font-display: swap; size-adjust: 92%; }
-@font-face { font-family: 'Lettera Mono'; src: url('/fonts/LetteraMono-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; size-adjust: 84%; }
-@font-face { font-family: 'Lettera Mono'; src: url('/fonts/LetteraMono-Medium.woff2') format('woff2'); font-weight: 500 900; font-display: swap; size-adjust: 84%; }
-@font-face { font-family: 'Space Grotesk'; src: url('/fonts/SpaceGrotesk-Regular.woff2') format('woff2'); font-weight: 400; font-display: swap; }
-@font-face { font-family: 'Space Grotesk'; src: url('/fonts/SpaceGrotesk-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
-@font-face { font-family: 'Space Grotesk'; src: url('/fonts/SpaceGrotesk-SemiBold.woff2') format('woff2'); font-weight: 600 900; font-display: swap; }
-/* Ndot/NType have no ₹ glyph: a size-matched Space Grotesk face fills it in */
-@font-face { font-family: 'Rupee Dot'; src: url('/fonts/SpaceGrotesk-Medium.woff2') format('woff2'); unicode-range: U+20B9; size-adjust: 80%; }
+/* Type: Geist (Vercel, SIL OFL) for everything, NType 82 (Nothing) as the serif accent.
+   See /public/fonts/CREDITS.md. */
+@font-face { font-family: 'Geist'; src: url('/fonts/Geist-Variable.woff2') format('woff2-variations'), url('/fonts/Geist-Variable.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
+/* Same Geist file, scaled for big numbers/headlines (the layout's type scale was set for a condensed face) */
+@font-face { font-family: 'Geist Display'; src: url('/fonts/Geist-Variable.woff2') format('woff2-variations'), url('/fonts/Geist-Variable.woff2') format('woff2'); font-weight: 100 900; font-display: swap; size-adjust: 76%; }
+@font-face { font-family: 'NType 82'; src: url('/fonts/NType82.woff2') format('woff2'); font-display: swap; size-adjust: 104%; }
 
 :root {
   --bg: #000000;
@@ -33,11 +27,11 @@
   --radius: 18px;
   --radius-sm: 12px;
   --shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.7);
-  --font-display: 'Ndot 57', 'Rupee Dot', 'Space Grotesk', system-ui, sans-serif;
-  --font-ui: 'Space Grotesk', system-ui, sans-serif;
-  --font-serif: 'NType 82', 'Space Grotesk', Georgia, serif;
-  --font-mono: 'Lettera Mono', 'Rupee Dot', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-  --font-body: 'Space Grotesk', system-ui, sans-serif;
+  --font-display: 'Geist Display', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-ui: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-serif: 'NType 82', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   color-scheme: dark;
 }
 
@@ -390,15 +384,6 @@ img { display: block; }
 
 .waiting { display: grid; place-items: center; text-align: center; height: 100%; gap: 6px; padding: 30px; }
 
-/* reactions */
-.react-bar { display: flex; gap: 4px; }
-.react-bar button { width: 36px; height: 36px; border-radius: 10px; font-size: 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); transition: transform 0.1s; }
-.react-bar button:hover { transform: translateY(-2px) scale(1.1); }
-.floaters { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
-.floater { position: absolute; bottom: 90px; display: flex; flex-direction: column; align-items: center; }
-.floater .e { font-size: 44px; }
-.floater .n { font-family: var(--font-ui); font-weight: 700; font-size: 12px; padding: 1px 8px; border-radius: 99px; background: rgba(0, 0, 0, 0.55); }
-
 /* squad drawer */
 .drawer-back { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.7); z-index: 70; backdrop-filter: blur(3px); }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100vw); z-index: 71; border-radius: 22px 0 0 22px; display: flex; flex-direction: column; overflow: hidden; background: #0a0a0a; }
@@ -533,8 +518,6 @@ img { display: block; }
   .a-top .chip-gold { display: none; }
   .a-top .btn-sm { height: 30px; padding: 0 10px; font-size: 12px; }
   .a-top .icon-btn { width: 30px; height: 30px; }
-  .react-bar button { width: 28px; height: 28px; font-size: 15px; border-radius: 8px; }
-  .a-top .react-bar.only-desktop { display: flex !important; }
   .a-top .btn-sm[title="Close this lot now"] { display: none !important; }
 
   .a-grid { grid-template-columns: minmax(0, 1fr); padding: 0 max(8px, env(safe-area-inset-right)) 6px max(8px, env(safe-area-inset-left)); gap: 6px; }
@@ -605,7 +588,6 @@ img { display: block; }
   .c-gavel { width: 60px; }
   .c-badge { font-size: 11px; padding: 3px 10px; }
   .c-mine { font-size: 18px; padding: 4px 18px; }
-  .floater { bottom: 60px; }
 
   /* lobby + home */
   .home { padding: 16px; }
@@ -643,30 +625,30 @@ img { display: block; }
 .input { font-family: var(--font-ui); font-weight: 500; }
 .code-input { font-family: var(--font-display); font-size: 46px; }
 
-/* ---------- emoji, flags, icons ---------- */
-.emoji { display: inline-block; vertical-align: middle; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35)); }
+/* ---------- flags, icons ---------- */
 .flag { display: inline-block; width: 1.35em; height: 1em; vertical-align: -0.12em; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18); flex-shrink: 0; }
 .glyph { display: inline-block; vertical-align: -0.1em; }
-.react-bar button { display: grid; place-items: center; padding: 0; }
-.react-bar button:active .emoji { transform: scale(1.3); }
-.react-bar .emoji { transition: transform 0.12s; }
-.floater .e { width: 52px; height: 52px; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.5)); }
-.c-badge .emoji { margin: -4px 0; }
-
-.react-tray { display: none; position: fixed; right: 12px; bottom: calc(100px + env(safe-area-inset-bottom)); z-index: 55; }
-.tray-fab { width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; background: rgba(18, 18, 18, 0.92); border: 1px solid var(--line-hi); box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.tray-fab:active { transform: scale(0.92); }
-.tray-panel { position: absolute; right: 0; bottom: 60px; display: grid; grid-template-columns: repeat(5, 44px); gap: 4px; padding: 8px; border-radius: 18px; transform-origin: bottom right;
-  background: rgba(14, 14, 14, 0.97); border: 1px solid var(--line-hi); box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.8); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-.tray-panel button { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px; }
-.tray-panel button:active { background: rgba(255, 255, 255, 0.08); }
-@media (max-width: 820px) {
-  .react-tray { display: block; }
-}
-@media (orientation: landscape) and (max-height: 520px) {
-  .react-tray { display: block; right: max(10px, env(safe-area-inset-right)); bottom: 76px; }
-  .a-top .react-bar.only-desktop { display: none !important; }
-  .tray-fab { width: 42px; height: 42px; }
-  .tray-panel { bottom: 50px; }
-}
 .tcard .meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- Geist type system ---------- */
+body { font-feature-settings: 'ss01' off; }
+.display, .stat-strip b, .room-code .code, .team-tile .tname, .avatar, .tcard .purse, .pcard .initials, .pcard .rating b,
+.bidbox .amount, .bidbox .leader b, .timer-num, .going, .bid-btn, .feed-item .amt, .t-name, .t-foot b, .t-stub b, .t-empty,
+.c-mine, .rcard .rank, .code-input, .t-last, .squad-row .display, .award .display {
+  font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+}
+.bidbox .amount, .timer-num, .tcard .purse, .feed-item .amt, .t-foot b { font-weight: 750; letter-spacing: -0.04em; }
+.hero-title { font-weight: 800; letter-spacing: -0.045em; line-height: 0.92; }
+.room-code .code, .code-input { letter-spacing: 0.14em; font-weight: 700; }
+.bid-btn { letter-spacing: -0.01em; text-transform: none; font-weight: 700; }
+.going, .c-mine { letter-spacing: 0.02em; }
+.eyebrow, .chip, .fact span, .t-top, .t-meta, .t-foot small, .t-stub small, .race-team span, .tcard .tag-pass, .pcard .rating span,
+.sidepanel-tabs button, .bid-btn small, .stat-strip span, .credits, .tcard.me::after, .team-tile .bot-add {
+  font-weight: 600; letter-spacing: 0.1em;
+}
+.btn, .tabs button, .seg button, .c-badge { font-weight: 600; letter-spacing: 0.06em; }
+.stepper span { font-weight: 600; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.fact b, .tcard .meta { font-variant-numeric: tabular-nums; }
+.pname .first, .t-first { font-family: var(--font-serif); font-weight: 400; letter-spacing: 0; text-transform: none; }
+.pname { letter-spacing: -0.035em; }
+.sidepanel-tabs button { white-space: nowrap; letter-spacing: 0.04em; font-size: 12px; }

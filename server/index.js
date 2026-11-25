@@ -9,14 +9,13 @@ import { Room, makeCode } from './game.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, '..', 'client', 'dist');
 const PORT = process.env.PORT || 3001;
-const REACTIONS = new Set(['fire', 'joy', 'scream', 'clap', 'money', 'clown', 'huff', 'pray', 'mindblown', 'skull']);
 
 const app = express();
 app.set('trust proxy', 1);
 app.use(compression());
-// Photos, fonts, emoji, flags and hashed build assets never change between deploys of the same file name
+// Photos, fonts, flags and hashed build assets never change between deploys of the same file name
 const LONG = { maxAge: '30d', immutable: true, index: false };
-for (const dir of ['assets', 'players', 'fonts', 'emoji', 'flags', 'teams']) app.use(`/${dir}`, express.static(path.join(DIST, dir), LONG));
+for (const dir of ['assets', 'players', 'fonts', 'flags', 'teams']) app.use(`/${dir}`, express.static(path.join(DIST, dir), LONG));
 app.use(express.static(DIST, { maxAge: '5m', index: false }));
 // Health check for UptimeRobot / Render. Cheap, never cached, works for HEAD and GET.
 // Keyword monitors can look for: "status":"ok"
@@ -121,19 +120,32 @@ io.on('connection', (socket) => {
   act('bid', ({ amount, seen }) => room.placeBid(memberId, Number(amount), Date.now(), seen === undefined ? undefined : seen));
   act('pass', () => room.pass(memberId));
   act('host', ({ action }) => room.hostAction(memberId, action));
+  act('rematch', () => room.rematch(memberId));
   act('rename', ({ name }) => {
     const m = room.members.get(memberId);
     if (m && name) m.name = String(name).slice(0, 18);
   });
 
-  let lastReact = 0;
-  socket.on('react', ({ emoji } = {}) => {
-    if (!room || !REACTIONS.has(emoji)) return;
-    const now = Date.now();
-    if (now - lastReact < 300) return; // spam guard
-    lastReact = now;
-    const m = room.members.get(memberId);
-    io.to(room.code).emit('react', { emoji, from: m?.name, team: m?.team, id: Math.random().toString(36).slice(2) });
+
+  // Leave the room for good (New auction / back button)
+  socket.on('leave', () => {
+    if (!room) return;
+    const r = room;
+    socket.leave(r.code);
+    const m = r.members.get(memberId);
+    const stillHere = [...(io.sockets.adapter.rooms.get(r.code) || [])].some((sid) => io.sockets.sockets.get(sid)?.data.memberId === memberId);
+    if (m && !stillHere) {
+      // in the lobby, free their franchise for someone else; mid/after auction keep the squad
+      if (r.phase === 'lobby') r.members.delete(memberId);
+      else m.connected = false;
+      if (memberId === r.hostId) {
+        const next = [...r.members.values()].find((x) => !x.bot && x.connected && x.id !== memberId);
+        if (next) r.hostId = next.id;
+      }
+    }
+    room = null;
+    socket.data.memberId = undefined;
+    broadcast(r);
   });
 
   socket.on('disconnect', () => {

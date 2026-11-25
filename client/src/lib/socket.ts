@@ -32,10 +32,14 @@ type Ack = { ok: boolean; error?: string; code?: string };
 let state: RoomState | null = null;
 let connected = socket.connected;
 let currentCode: string | null = null;
+let joining = false;
 const subs = new Set<() => void>();
 const emit = () => subs.forEach((f) => f());
 
 socket.on('state', (s: RoomState) => {
+  // ignore rooms we've left; accept the first update while a create/join is in flight
+  if (currentCode ? s.code !== currentCode : !joining) return;
+  if (!currentCode) currentCode = s.code;
   state = { ...s, receivedAt: performance.now() };
   emit();
 });
@@ -74,18 +78,25 @@ export function call(event: string, payload: object = {}): Promise<Ack> {
 }
 
 export async function createRoom(name: string) {
+  joining = true;
   const r = await call('create', { memberId, name });
+  joining = false;
   if (r.ok) currentCode = r.code!;
   return r;
 }
 export async function joinRoom(code: string, name: string) {
+  joining = true;
   const r = await call('join', { code, memberId, name });
+  joining = false;
   if (r.ok) currentCode = r.code!;
+  else if (!state) currentCode = null;
   return r;
 }
 export function leaveRoom() {
+  if (currentCode) socket.emit('leave');
   currentCode = null;
   state = null;
+  try { history.replaceState(null, '', '/'); } catch {}
   emit();
 }
 

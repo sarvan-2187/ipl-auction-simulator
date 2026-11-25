@@ -328,6 +328,26 @@ export class Room {
     }
   }
 
+  // Same room, same people and franchise picks; fresh purses, new random sets
+  rematch(byId, now = Date.now()) {
+    this.assertHost(byId);
+    if (this.phase !== 'results') throw new Error('Finish this auction first');
+    this.phase = 'lobby';
+    this.teams = {};
+    this.queue = [];
+    this.idx = -1;
+    this.round = 1;
+    this.unsold = [];
+    this.lot = null;
+    this.paused = false;
+    this.log = [];
+    this.seed = Math.floor(Math.random() * 2 ** 31);
+    this.rnd = mulberry32(this.seed);
+    this.botPlans = {};
+    for (const [id, m] of this.members) if (!m.connected && !m.bot && id !== this.hostId) this.members.delete(id);
+    this.lastActive = now;
+  }
+
   finish() {
     this.phase = 'results';
     this.lot = null;

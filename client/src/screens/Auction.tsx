@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SoldCeremony, { type CeremonyTags } from '../components/SoldCeremony';
 import { getPlayer, getTeam, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
-import { call, memberId, useSocketEvent } from '../lib/socket';
+import { call, memberId } from '../lib/socket';
 import type { Lot, Player, RoomState, TeamState } from '../lib/types';
 import { Face, GavelIcon, Silhouette, TeamLogo, initials, teamVars, useToast } from '../components/ui';
 import SquadDrawer from '../components/SquadDrawer';
 import { isMuted, setMuted, sfx } from '../lib/sound';
 
-import { Emoji, Flag, PlaneIcon, ReactionBar, ReactionTray, SpeakerIcon, usePreloadEmoji } from '../components/Emoji';
-import { BADGE_EMOJI, REACTIONS } from '../lib/reactions';
+import { Flag, PlaneIcon, SpeakerIcon } from '../components/Icons';
 
 function useCountdown(room: RoomState) {
   const lot = room.lot;
@@ -55,9 +54,7 @@ export default function Auction({ room }: { room: RoomState }) {
   const [drawer, setDrawer] = useState<string | null>(null);
   const [tab, setTab] = useState<'feed' | 'next' | 'squad'>('feed');
   const [muted, setMutedState] = useState(isMuted());
-  const [floaters, setFloaters] = useState<{ id: string; emoji: string; from?: string; x: number; drift: number }[]>([]);
   const busy = useRef(false);
-  usePreloadEmoji([...REACTIONS.map((r) => r.key), ...BADGE_EMOJI]);
 
   const next = lot?.next ?? null;
   const block = blocker(room, myTeam, next);
@@ -116,13 +113,6 @@ export default function Auction({ room }: { room: RoomState }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [bid, pass]);
 
-  useSocketEvent<{ emoji: string; from?: string; id: string }>('react', useCallback((r) => {
-    sfx.pop();
-    if (!REACTIONS.some((x) => x.key === r.emoji)) return;
-    const f = { ...r, x: 8 + Math.random() * 84, drift: (Math.random() - 0.5) * 60 };
-    setFloaters((l) => [...l.slice(-14), f]);
-    setTimeout(() => setFloaters((l) => l.filter((x) => x.id !== r.id)), 2600);
-  }, []));
 
   const teams = useMemo(() => Object.values(room.teams), [room.teams]);
   const ownerName = (code: string) => room.members.find((m) => m.team === code)?.name || code;
@@ -144,7 +134,6 @@ export default function Auction({ room }: { room: RoomState }) {
           </div>
         </div>
         <div className="grow" />
-        <ReactionBar className="only-desktop" />
         <span className="chip">Lot {lot?.n ?? 0}/{total}</span>
         {myTeam && (
           <button className="chip chip-gold" onClick={() => setDrawer(myTeam.code)} style={{ height: 34, cursor: 'pointer' }}>
@@ -236,17 +225,6 @@ export default function Auction({ room }: { room: RoomState }) {
         </aside>
       </div>
 
-      <ReactionTray />
-      <div className="floaters" aria-hidden="true">
-        <AnimatePresence>
-          {floaters.map((f) => (
-            <motion.div key={f.id} className="floater" style={{ left: `${f.x}%` }} initial={{ y: 0, opacity: 0, scale: 0.3 }} animate={{ y: -400, x: [0, f.drift, -f.drift * 0.6, f.drift * 0.3], opacity: [0, 1, 1, 0], scale: [0.3, 1.25, 1, 0.9], rotate: [0, f.drift / 2, -f.drift / 3, 0] }} transition={{ duration: 2.6, ease: 'easeOut', times: [0, 0.15, 0.7, 1] }}>
-              <Emoji name={f.emoji} size={52} className="e" />
-              {f.from && <span className="n">{f.from}</span>}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
 
       {drawer && room.teams[drawer] && <SquadDrawer room={room} code={drawer} onClose={() => setDrawer(null)} />}
     </div>
@@ -304,7 +282,7 @@ function PlayerArt({ p, leader }: { p: Player; leader: string | null }) {
       )}
       {leader && <img className="lastteam logo" src={`/teams/${leader}.svg`} alt={`${leader} leads`} />}
       <div className="rating" title="Auction rating"><div><b>{p.rating}</b><span>RTG</span></div></div>
-      {p.marquee && <span className="chip chip-gold marquee-tag">★ Marquee</span>}
+      {p.marquee && <span className="chip chip-gold marquee-tag">Marquee</span>}
       <div className="nameplate only-mobile">
         <div className="display">{p.name}</div>
         <div className="np-sub">{ROLE_LABEL[p.role]} · <Flag cc={p.cc} /> {p.country}</div>

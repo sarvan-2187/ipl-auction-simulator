@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { getPlayer, getTeam, money, teamStrength } from '../lib/data';
-import { leaveRoom, memberId } from '../lib/socket';
+import { call, leaveRoom, memberId } from '../lib/socket';
 import type { RoomState } from '../lib/types';
 import { Face, TeamLogo, teamVars, useToast } from '../components/ui';
 import SquadDrawer from '../components/SquadDrawer';
-import { Emoji } from '../components/Emoji';
 
 export default function Results({ room }: { room: RoomState }) {
   const toast = useToast();
@@ -27,7 +26,7 @@ export default function Results({ room }: { room: RoomState }) {
   }, []);
 
   function summary() {
-    const lines = [`🏏 IPL Auction Room ${room.code} — Final squads`, ''];
+    const lines = [`IPL Auction Room ${room.code} — Final squads`, ''];
     ranked.forEach((r, i) => {
       const owner = room.members.find((m) => m.team === r.t.code)?.name;
       lines.push(`${i + 1}. ${r.t.code} (${owner}) · strength ${r.score} · spent ${money(r.spent)}`);
@@ -36,15 +35,21 @@ export default function Results({ room }: { room: RoomState }) {
     return lines.join('\n');
   }
 
+  const isHost = room.hostId === memberId;
+  async function rematch() {
+    const r = await call('rematch');
+    if (!r.ok) toast(r.error || 'Could not restart', true);
+  }
+
   async function copy() {
     try { await navigator.clipboard.writeText(summary()); toast('Squads copied, paste in your group chat'); } catch { toast('Copy failed', true); }
   }
 
-  const Award = ({ title, icon, b, note }: { title: string; icon: string; b?: typeof priciest; note: string }) => b ? (
+  const Award = ({ title, b, note }: { title: string; b?: typeof priciest; note: string }) => b ? (
     <div className="panel award" style={teamVars(b.team)}>
       <Face p={b.p} />
       <div style={{ minWidth: 0 }}>
-        <div className="eyebrow gold row" style={{ gap: 6 }}><Emoji name={icon} size={18} /> {title}</div>
+        <div className="eyebrow gold">{title}</div>
         <div className="display ellipsis" style={{ fontSize: 26 }}>{b.p.name}</div>
         <div className="muted" style={{ fontSize: 13 }}><b>{b.team}</b> · {money(b.price)} · {note}</div>
       </div>
@@ -57,9 +62,6 @@ export default function Results({ room }: { room: RoomState }) {
         <div className="eyebrow">Room {room.code} · Auction complete</div>
         {winner && (
           <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 200, damping: 16 }} className="col" style={{ alignItems: 'center', marginTop: 14 }}>
-            <motion.div initial={{ y: -40, rotate: -20, opacity: 0 }} animate={{ y: 0, rotate: -8, opacity: 1 }} transition={{ delay: 0.5, type: 'spring', stiffness: 300, damping: 12 }} style={{ marginBottom: -18, zIndex: 1 }}>
-              <Emoji name="crown" size={64} />
-            </motion.div>
             <TeamLogo code={winner.t.code} size={110} />
             <div className="display" style={{ fontSize: 'clamp(44px, 7vw, 80px)' }}>{getTeam(winner.t.code)?.name}</div>
             <div className="muted" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 18 }}>
@@ -67,16 +69,21 @@ export default function Results({ room }: { room: RoomState }) {
             </div>
           </motion.div>
         )}
-        <div className="row" style={{ justifyContent: 'center', marginTop: 18 }}>
+        <div className="row" style={{ justifyContent: 'center', marginTop: 18, flexWrap: 'wrap' }}>
           <button className="btn btn-gold" onClick={copy}>Copy squads for WhatsApp</button>
-          <button className="btn" onClick={() => { leaveRoom(); history.replaceState(null, '', '/'); }}>New auction</button>
+          {isHost ? (
+            <button className="btn" onClick={rematch}>Play again · same room</button>
+          ) : (
+            <span className="dim" style={{ alignSelf: 'center', fontSize: 13 }}>Host can start another round in this room</span>
+          )}
+          <button className="btn btn-ghost" onClick={leaveRoom}>Leave room</button>
         </div>
       </div>
 
       <div className="awards">
-        <Award title="Most expensive" icon="trophy" b={priciest} note="record buy" />
-        <Award title="Steal of the auction" icon="gem" b={steal} note={`RTG ${steal?.p.rating}`} />
-        <Award title="Bidding war" icon="swords" b={overpay} note={overpay ? `${(overpay.price / overpay.p.base).toFixed(1)}× base` : ''} />
+        <Award title="Most expensive" b={priciest} note="record buy" />
+        <Award title="Steal of the auction" b={steal} note={`RTG ${steal?.p.rating}`} />
+        <Award title="Bidding war" b={overpay} note={overpay ? `${(overpay.price / overpay.p.base).toFixed(1)}× base` : ''} />
       </div>
 
       <div className="results-grid">

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { getPlayer, getTeam, money, ROLE_LABEL, teamStrength } from '../lib/data';
 import type { Role, RoomState } from '../lib/types';
 import { Face, TeamLogo, teamVars } from './ui';
-import { Flag, PlaneIcon } from './Emoji';
+import { Flag, PlaneIcon } from './Icons';
 import { useEffect } from 'react';
 
 const ORDER: Role[] = ['BAT', 'WK', 'AR', 'BOWL'];

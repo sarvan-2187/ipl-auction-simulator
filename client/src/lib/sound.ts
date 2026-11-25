@@ -76,5 +76,4 @@ export const sfx = {
   },
   newLot: () => { tone(392, 0.12, 'sine', 0.08); tone(587, 0.18, 'sine', 0.08, 0.1); },
   error: () => tone(200, 0.15, 'square', 0.05),
-  pop: () => tone(900, 0.06, 'sine', 0.06, 0, 1400),
 };
