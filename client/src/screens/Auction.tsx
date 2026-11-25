@@ -129,7 +129,7 @@ export default function Auction({ room }: { room: RoomState }) {
   const total = room.progress.total;
 
   // The card is neutral until someone bids, then it takes the leading franchise's colours
-  const stageVars = player ? { ['--pc1' as any]: getTeam(lot?.leader)?.primary || '#24306a' } : {};
+  const stageVars = player ? { ['--pc1' as any]: getTeam(lot?.leader)?.primary || '#1a1a1a' } : {};
   const leaderTeam = getTeam(lot?.leader);
 
   return (

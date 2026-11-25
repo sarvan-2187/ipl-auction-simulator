@@ -36,7 +36,7 @@ export function TeamLogo({ code, size = 40, className = '' }: { code: string; si
 
 export function teamVars(code?: string | null): Record<string, string> {
   const t = getTeam(code);
-  return { ['--c1' as any]: t?.primary || '#33407a', ['--c2' as any]: t?.secondary || '#f5c04a' };
+  return { ['--c1' as any]: t?.primary || '#1f1f1f', ['--c2' as any]: t?.secondary || '#f5c04a' };
 }
 
 export function initials(name: string) {

@@ -16,7 +16,7 @@ export interface CeremonyTags { record: boolean; steal: boolean; war: boolean }
 export default function SoldCeremony({ lot, player, mine, roomCode, tags }: { lot: Lot; player: Player; mine: boolean; roomCode: string; tags: CeremonyTags }) {
   const sold = lot.status === 'sold';
   const team = getTeam(lot.leader);
-  const c1 = team?.primary || '#3b4270';
+  const c1 = team?.primary || '#262626';
   const c2 = team?.secondary || '#f5c04a';
   // red ink normally; navy ink on red/pink/orange franchises so the stamp stays readable
   const ink = !sold ? '#d42a40' : ['RCB', 'PBKS', 'RR', 'SRH'].includes(lot.leader || '') ? '#13296e' : '#c8102e';

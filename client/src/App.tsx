@@ -39,7 +39,7 @@ export default function App() {
   const me = room?.members.find((m) => m.id === memberId);
   const myTeam = getTeam(me?.team);
   useEffect(() => {
-    document.documentElement.style.setProperty('--team', myTeam?.primary || '#5b8cff');
+    document.documentElement.style.setProperty('--team', myTeam?.primary || '#9a9a9a');
     document.documentElement.style.setProperty('--team-2', myTeam?.secondary || '#f5c04a');
     document.documentElement.style.setProperty('--tt', myTeam?.text || '#fff');
   }, [myTeam]);
