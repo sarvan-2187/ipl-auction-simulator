@@ -9,7 +9,7 @@ import SquadDrawer from '../components/SquadDrawer';
 import { RoleRules } from '../components/RoleRules';
 import { isMuted, setMuted, sfx } from '../lib/sound';
 
-import { Flag, PlaneIcon, SpeakerIcon } from '../components/Icons';
+import { Flag, SpeakerIcon } from '../components/Icons';
 
 function useCountdown(room: RoomState) {
   const lot = room.lot;
@@ -27,6 +27,8 @@ function useCountdown(room: RoomState) {
   }, [lot, room.receivedAt, room.paused]);
   return ms;
 }
+
+const TOUCH = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
 
 function blocker(room: RoomState, team: TeamState | undefined, amount: number | null): string | null {
   const lot = room.lot;
@@ -91,18 +93,32 @@ export default function Auction({ room }: { room: RoomState }) {
   const iPassed = !!(myTeam && lot?.passed.includes(myTeam.code));
 
   // ---- sounds & effects on state transitions
-  const prev = useRef<{ id?: number; bids?: number; status?: string }>({});
+  const prev = useRef<{ id?: number; bids?: number; status?: string; leader?: string | null }>({});
+  const [flash, setFlash] = useState<{ key: number; team: string; amount: number; outbid: boolean } | null>(null);
   useEffect(() => {
     const p = prev.current;
+    // total bids (history itself is trimmed to the last 8 by the server)
+    const bids = lot ? lot.bidCount ?? lot.history.length : 0;
     if (lot) {
       if (lot.id !== p.id && lot.status === 'live') sfx.newLot();
-      else if (lot.history.length > (p.bids ?? 0) && lot.id === p.id) {
+      else if (bids > (p.bids ?? 0) && lot.id === p.id) {
         const last = lot.history[lot.history.length - 1];
-        if (last?.team === myTeam?.code) sfx.myBid(); else sfx.bid();
+        if (last?.team === myTeam?.code) sfx.myBid();
+        else {
+          sfx.bid();
+          const outbid = !!myTeam && p.leader === myTeam.code;
+          if (last) setFlash({ key: Date.now(), team: last.team, amount: last.amount, outbid });
+          if (outbid) { try { navigator.vibrate?.([40, 60, 40]); } catch {} }
+        }
       }
     }
-    prev.current = { id: lot?.id, bids: lot?.history.length ?? 0, status: lot?.status };
+    prev.current = { id: lot?.id, bids, status: lot?.status, leader: lot?.leader };
   }, [lot, myTeam?.code]);
+  useEffect(() => {
+    if (!flash) return;
+    const t = setTimeout(() => setFlash(null), flash.outbid ? 2600 : 1600);
+    return () => clearTimeout(t);
+  }, [flash]);
 
   const secs = Math.ceil(ms / 1000);
   const lastTick = useRef(0);
@@ -222,6 +238,11 @@ export default function Auction({ room }: { room: RoomState }) {
             </div>
           )}
 
+          {/* phones: live bid strip docked just above the Bid button */}
+          {myTeam && lot && lot.status === 'live' && (
+            <LiveDock lot={lot} ms={ms} paused={room.paused} myCode={myTeam.code} bidTime={room.settings.bidTime} flash={flash} />
+          )}
+
           {/* controls */}
           {myTeam ? (
             <div className="panel controls">
@@ -235,7 +256,7 @@ export default function Auction({ room }: { room: RoomState }) {
                     ? block.split(' · ').slice(1).join(' · ')
                     : lot?.leader === myTeam.code && lot.status === 'live'
                       ? 'Highest bidder · hold your nerve'
-                      : squadNeeds(room, myTeam) || (block ? '\u00a0' : 'Space / Enter')}
+                      : squadNeeds(room, myTeam) || (block ? '\u00a0' : TOUCH ? 'Tap to bid' : 'Space / Enter')}
                 </small>
               </button>
               <div className="jump">
@@ -291,8 +312,13 @@ function TeamRow({ t, room, owner, onOpen }: { t: TeamState; room: RoomState; ow
     <button className={`tcard ${leading ? 'leading' : ''} ${passed ? 'passed' : ''} ${t.ownerId === memberId ? 'me' : ''}`} style={teamVars(t.code)} onClick={onOpen} aria-label={`${t.code} squad`}>
       <TeamLogo code={t.code} size={40} />
       <div style={{ minWidth: 0 }}>
-        <div className="owner ellipsis">{owner}</div>
-        <div className="meta">{t.squad.length}/{room.settings.maxSquad} · <PlaneIcon size={11} /> {os}/{room.settings.maxOverseas}{passed ? ' · ' : ''}{passed && <span className="tag-pass">PASSED</span>}</div>
+        <div className="owner-line">
+          <span className="owner ellipsis">{owner}</span>
+          {t.ownerId === memberId && <span className="you-badge">You</span>}
+        </div>
+        <div className="meta" title={`${t.squad.length} of ${room.settings.maxSquad} players, ${os} of ${room.settings.maxOverseas} overseas`}>
+          {t.squad.length}/{room.settings.maxSquad}<span className="w-players"> players</span> · {os} OS{passed && <span className="tag-pass"> · Passed</span>}
+        </div>
       </div>
       <div className="purse">{money(t.purse, { short: true })}</div>
       <div className="bar"><i style={{ width: `${pct}%` }} /></div>
@@ -387,6 +413,35 @@ function RaceStrip({ room }: { room: RoomState }) {
         })}
       </div>
     </div>
+  );
+}
+
+function LiveDock({ lot, ms, paused, myCode, bidTime, flash }: { lot: Lot; ms: number; paused: boolean; myCode: string; bidTime: number; flash: { key: number; team: string; amount: number; outbid: boolean } | null }) {
+  const secs = Math.ceil(ms / 1000);
+  const frac = Math.min(1, ms / (bidTime * 1000));
+  const leading = lot.leader === myCode;
+  const lt = getTeam(lot.leader);
+  const showFlash = flash && flash.team !== myCode && flash.team === lot.leader;
+  const tone = showFlash && flash!.outbid ? 'outbid' : leading ? 'lead' : showFlash ? 'bid' : 'idle';
+  const label = showFlash
+    ? flash!.outbid ? `Outbid! ${flash!.team} ${money(flash!.amount)}` : `${flash!.team} bid ${money(flash!.amount)}`
+    : leading ? `You lead · ${money(lot.bid)}` : lot.leader ? `${lot.leader} leads · ${money(lot.bid)}` : `Opening at ${money(lot.base)}`;
+  return (
+    <motion.div
+      key={showFlash ? flash!.key : 'steady'}
+      className={`live-dock only-mobile ${tone}`}
+      style={{ ['--lc' as any]: lt?.primary || '#444' }}
+      initial={showFlash ? { y: 12, scale: 0.96 } : false}
+      animate={showFlash && flash!.outbid ? { y: 0, scale: 1, x: [0, -8, 8, -5, 5, 0] } : { y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 500, damping: 22, x: { duration: 0.4 } }}
+      role="status"
+      aria-live="assertive"
+    >
+      <div className={`ld-clock ${secs <= 3 && !paused ? 'crit' : ''}`}>{paused ? 'II' : secs}</div>
+      {lot.leader ? <TeamLogo code={lot.leader} size={28} /> : <span className="ld-dot" />}
+      <div className="ld-text">{label}</div>
+      <i className="ld-bar" style={{ transform: `scaleX(${paused ? 1 : frac})` }} />
+    </motion.div>
   );
 }
 
@@ -493,7 +548,7 @@ function SidePanel({ room, tab, setTab, myTeam }: { room: RoomState; tab: 'feed'
               <Face p={p} />
               <div style={{ minWidth: 0 }}>
                 <div className="ellipsis pn" style={{ fontSize: 17 }}>{p.name}</div>
-                <div className="dim" style={{ fontSize: 12 }}>{ROLE_LABEL[as]} · {ratingAs(p, as)}{p.overseas && <> · <PlaneIcon size={11} /></>}</div>
+                <div className="dim" style={{ fontSize: 12 }}>{ROLE_LABEL[as]} · {ratingAs(p, as)}{p.overseas && ' · OS'}</div>
               </div>
               <span className="amt">{money(s.price, { short: true })}</span>
             </div>

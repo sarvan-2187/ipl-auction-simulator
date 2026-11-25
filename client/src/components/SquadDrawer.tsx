@@ -5,7 +5,6 @@ import { RoleRules, ROLE_NAME } from './RoleRules';
 import { useToast } from './ui';
 import type { Role, RoomState } from '../lib/types';
 import { Face, TeamLogo, teamVars } from './ui';
-import { PlaneIcon } from './Icons';
 import { useEffect } from 'react';
 
 const ORDER: Role[] = ['WK', 'BAT', 'AR', 'BOWL'];
@@ -69,7 +68,7 @@ export default function SquadDrawer({ room, code, onClose }: { room: RoomState; 
                     <div className="squad-row" key={s.id} style={teamVars(code)}>
                       <Face p={p} />
                       <div style={{ minWidth: 0 }}>
-                        <div className="ellipsis pn" style={{ fontSize: 20 }}>{p.name} {p.overseas && <span className="dim" title="Overseas"><PlaneIcon size={13} /></span>}</div>
+                        <div className="ellipsis pn" style={{ fontSize: 20 }}>{p.name} {p.overseas && <span className="os-tag" title="Overseas">OS</span>}</div>
                         <div className="role-pick" role="group" aria-label={`${p.name} role`}>
                           {(p.roles || [p.role]).map((r) => (
                             <button key={r} className={r === as ? 'on' : ''} disabled={!mine || r === as} onClick={() => setRole(s.id, r)} title={`${ROLE_LABEL[r]}: rating ${ratingAs(p, r)}`}>
