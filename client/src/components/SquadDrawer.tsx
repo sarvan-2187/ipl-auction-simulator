@@ -1,11 +1,14 @@
 import { motion } from 'framer-motion';
-import { getPlayer, getTeam, money, ROLE_LABEL, teamStrength } from '../lib/data';
+import { getPlayer, getTeam, money, ratingAs, ROLE_LABEL, roleOf, teamStrength } from '../lib/data';
+import { call, memberId } from '../lib/socket';
+import { RoleRules, ROLE_NAME } from './RoleRules';
+import { useToast } from './ui';
 import type { Role, RoomState } from '../lib/types';
 import { Face, TeamLogo, teamVars } from './ui';
-import { Flag, PlaneIcon } from './Icons';
+import { PlaneIcon } from './Icons';
 import { useEffect } from 'react';
 
-const ORDER: Role[] = ['BAT', 'WK', 'AR', 'BOWL'];
+const ORDER: Role[] = ['WK', 'BAT', 'AR', 'BOWL'];
 
 export default function SquadDrawer({ room, code, onClose }: { room: RoomState; code: string; onClose: () => void }) {
   const t = room.teams[code];
@@ -13,7 +16,13 @@ export default function SquadDrawer({ room, code, onClose }: { room: RoomState; 
   const owner = room.members.find((m) => m.team === code);
   const spent = room.settings.purse - t.purse;
   const os = t.squad.filter((s) => getPlayer(s.id).overseas).length;
-  const { score } = teamStrength(t.squad.map((s) => s.id));
+  const { score } = teamStrength(t.squad);
+  const mine = t.ownerId === memberId;
+  const toast = useToast();
+  const setRole = async (id: number, role: Role) => {
+    const r = await call('setRole', { id, role });
+    if (!r.ok) toast(r.error || 'Could not change role', true);
+  };
 
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -39,23 +48,35 @@ export default function SquadDrawer({ room, code, onClose }: { room: RoomState; 
           <div className="fact"><span>Squad</span><b>{t.squad.length}/{room.settings.maxSquad}</b></div>
           <div className="fact"><span>Overseas</span><b>{os}/{room.settings.maxOverseas}</b></div>
         </div>
+        <div style={{ padding: '4px 16px 0' }}><RoleRules room={room} team={t} /></div>
         <div className="squad-list">
           {t.squad.length === 0 && <div className="dim" style={{ padding: 20, textAlign: 'center' }}>No players bought yet.</div>}
-          {t.squad.length > 0 && <div className="eyebrow" style={{ marginTop: 10 }}>Best-XI strength <span className="gold">{score}</span></div>}
+          {t.squad.length > 0 && (
+            <div className="eyebrow" style={{ marginTop: 10 }}>
+              Best-XI strength <span className="gold">{score}</span>{mine && ' · tap a role to switch'}
+            </div>
+          )}
           {ORDER.map((role) => {
-            const list = t.squad.filter((s) => getPlayer(s.id).role === role).sort((a, b) => b.price - a.price);
+            const list = t.squad.filter((s) => roleOf(s) === role).sort((a, b) => b.price - a.price);
             if (!list.length) return null;
             return (
               <div className="role-group" key={role}>
-                <div className="eyebrow">{ROLE_LABEL[role]}s · {list.length}</div>
+                <div className="eyebrow">{ROLE_NAME[role]} · {list.length}</div>
                 {list.map((s) => {
                   const p = getPlayer(s.id);
+                  const as = roleOf(s);
                   return (
                     <div className="squad-row" key={s.id} style={teamVars(code)}>
                       <Face p={p} />
                       <div style={{ minWidth: 0 }}>
                         <div className="ellipsis pn" style={{ fontSize: 20 }}>{p.name} {p.overseas && <span className="dim" title="Overseas"><PlaneIcon size={13} /></span>}</div>
-                        <div className="dim" style={{ fontSize: 12 }}><Flag cc={p.cc} /> {p.country} · RTG {p.rating}</div>
+                        <div className="role-pick" role="group" aria-label={`${p.name} role`}>
+                          {(p.roles || [p.role]).map((r) => (
+                            <button key={r} className={r === as ? 'on' : ''} disabled={!mine || r === as} onClick={() => setRole(s.id, r)} title={`${ROLE_LABEL[r]}: rating ${ratingAs(p, r)}`}>
+                              {r} <b>{ratingAs(p, r)}</b>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                       <div className="display gold" style={{ fontSize: 24 }}>{money(s.price)}</div>
                     </div>

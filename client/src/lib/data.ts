@@ -46,17 +46,40 @@ export function increment(bid: number) {
 }
 
 // Team strength: average rating of best XI (max 4 overseas) – a fun post-auction score
-export function teamStrength(ids: number[]) {
-  const ps = ids.map(getPlayer).sort((a, b) => b.rating - a.rating);
-  const xi: Player[] = [];
+export const ROLES: Role[] = ['BAT', 'BOWL', 'AR', 'WK'];
+const ROLE_FILL_ORDER: Role[] = ['WK', 'BOWL', 'AR', 'BAT'];
+type SquadEntry = { id: number; role?: Role };
+
+export const ratingAs = (p: Player, role: Role) => (p.ratings?.[role] ?? p.rating);
+export const roleOf = (e: SquadEntry) => e.role || getPlayer(e.id).role;
+
+export function roleCounts(squad: SquadEntry[]) {
+  const c: Record<Role, number> = { BAT: 0, BOWL: 0, AR: 0, WK: 0 };
+  for (const e of squad) c[roleOf(e)]++;
+  return c;
+}
+export function unmet(counts: Record<Role, number>, roleMin: Partial<Record<Role, number>> | undefined) {
+  const out: Partial<Record<Role, number>> = {};
+  for (const r of ROLES) { const n = Math.max(0, (roleMin?.[r] || 0) - counts[r]); if (n) out[r] = n; }
+  return out;
+}
+export function bestRoleFor(squad: SquadEntry[], p: Player, roleMin: Partial<Record<Role, number>> | undefined): Role {
+  const need = unmet(roleCounts(squad), roleMin);
+  return ROLE_FILL_ORDER.find((r) => need[r] && (p.roles || [p.role]).includes(r)) || p.role;
+}
+
+// Team strength: average rating of a best XI picked by role (1 keeper, 4 bowling options, max 4 overseas),
+// using each player's rating in the role his owner assigned
+export function teamStrength(squad: SquadEntry[]) {
+  const pool = squad.map((e) => { const p = getPlayer(e.id); const role = roleOf(e); return { p, role, r: ratingAs(p, role) }; })
+    .sort((a, b) => b.r - a.r);
+  const xi: typeof pool = [];
   let os = 0;
-  for (const p of ps) {
-    if (xi.length === 11) break;
-    if (p.overseas && os >= 4) continue;
-    if (p.overseas) os++;
-    xi.push(p);
-  }
-  if (!xi.length) return { score: 0, xi };
-  const score = Math.round(xi.reduce((s, p) => s + p.rating, 0) / 11);
+  const take = (x: (typeof pool)[number]) => { if (xi.includes(x) || xi.length >= 11 || (x.p.overseas && os >= 4)) return false; if (x.p.overseas) os++; xi.push(x); return true; };
+  pool.filter((x) => x.role === 'WK').slice(0, 1).forEach(take);
+  let bowlers = 0;
+  for (const x of pool) if (bowlers < 4 && (x.role === 'BOWL' || x.role === 'AR') && take(x)) bowlers++;
+  for (const x of pool) take(x);
+  const score = xi.length ? Math.round(xi.reduce((s, x) => s + x.r, 0) / 11) : 0;
   return { score, xi };
 }

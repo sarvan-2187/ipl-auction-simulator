@@ -55,6 +55,10 @@ In UptimeRobot: **Add New Monitor → HTTP(s)** (or **Keyword**, looking for `"s
 
 The pool is automatically enlarged if there are many teams. Purse (default ₹120 Cr), overseas limit, bid clock and squad sizes are all adjustable.
 
+**Squad rules:** every squad must reach at least 3 batters, 4 bowlers, 2 all-rounders and 2 wicket-keepers (the host can change these). The server blocks any bid that would make the rules impossible to meet with the slots you have left, and the Bid button tells you what you still need. Each auction's player pool guarantees enough of every role.
+
+**Role ratings:** every player has a Batting, Bowling, All-rounder and (for keepers) Wicket-keeping rating, built from IPL stats with recent seasons weighted most: runs, strike rate and average for batting; wickets, economy and strike rate for bowling. The headline rating is his main role. After you buy a player you can switch him between the roles he's eligible for in your squad view, and his rating, your role counts and your Best-XI strength update to match.
+
 **Rules enforced by the server:** IPL bid increments (5L under 1 Cr, 10L to 2 Cr, 20L to 5 Cr, 25L to 10 Cr, 50L above), you can't outbid yourself, you can't exceed the squad or overseas cap, and you must keep enough purse (30L per remaining slot) to reach the minimum squad.
 
 ## Refreshing player data

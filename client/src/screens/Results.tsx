@@ -6,12 +6,13 @@ import { call, leaveRoom, memberId } from '../lib/socket';
 import type { RoomState } from '../lib/types';
 import { Face, TeamLogo, teamVars, useToast } from '../components/ui';
 import SquadDrawer from '../components/SquadDrawer';
+import { RoleRules, rulesMet } from '../components/RoleRules';
 
 export default function Results({ room }: { room: RoomState }) {
   const toast = useToast();
   const [drawer, setDrawer] = useState<string | null>(null);
   const ranked = useMemo(() => Object.values(room.teams)
-    .map((t) => ({ t, ...teamStrength(t.squad.map((s) => s.id)), spent: room.settings.purse - t.purse }))
+    .map((t) => ({ t, ...teamStrength(t.squad), spent: room.settings.purse - t.purse }))
     .sort((a, b) => b.score - a.score || a.spent - b.spent), [room]);
 
   const allBuys = Object.values(room.teams).flatMap((t) => t.squad.map((s) => ({ ...s, team: t.code, p: getPlayer(s.id) })));
@@ -99,6 +100,10 @@ export default function Results({ room }: { room: RoomState }) {
                 </div>
                 <div className="rank">#{i + 1}</div>
               </div>
+              <div style={{ padding: '12px 16px 0' }}>
+                <RoleRules room={room} team={r.t} compact />
+                {!rulesMet(room, r.t) && <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>Squad rules not met</div>}
+              </div>
               <div className="kpis" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
                 <div className="fact"><span>Strength</span><b className="gold">{r.score}</b></div>
                 <div className="fact"><span>Spent</span><b>{money(r.spent)}</b></div>
@@ -107,10 +112,11 @@ export default function Results({ room }: { room: RoomState }) {
               <div style={{ padding: '8px 16px 16px' }}>
                 <div className="eyebrow" style={{ margin: '6px 0' }}>Best XI</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 6 }}>
-                  {r.xi.map((p) => (
-                    <div key={p.id} className="row" style={{ gap: 8 }}>
-                      <Face p={p} className="mini-face" />
-                      <span className="ellipsis pn" style={{ fontSize: 16 }}>{p.name}</span>
+                  {r.xi.map((x) => (
+                    <div key={x.p.id} className="row" style={{ gap: 8 }}>
+                      <Face p={x.p} className="mini-face" />
+                      <span className="ellipsis pn" style={{ fontSize: 16 }}>{x.p.name}</span>
+                      <span className="dim" style={{ fontSize: 11, fontWeight: 600, marginLeft: 'auto', whiteSpace: 'nowrap' }}>{x.role} {x.r}</span>
                     </div>
                   ))}
                 </div>

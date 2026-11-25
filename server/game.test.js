@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Room, increment, buildQueue, DEFAULT_SETTINGS, PLAYER_BY_ID } from './game.js';
+import { Room, increment, buildQueue, DEFAULT_SETTINGS, PLAYER_BY_ID, roleCounts } from './game.js';
 
 test('increments follow IPL slabs', () => {
   assert.equal(increment(30), 5);
@@ -54,6 +54,10 @@ test('full bot auction completes with legal squads', () => {
   }
   console.log('sold', sold, 'sim minutes', (t / 60000).toFixed(1));
   assert.ok(sold > 60);
+  for (const team of Object.values(r.teams)) {
+    const c = roleCounts(team.squad);
+    console.log(team.code, 'roles', JSON.stringify(c));
+  }
 });
 
 test('rematch returns the room to the lobby with the same people', () => {
@@ -70,4 +74,34 @@ test('rematch returns the room to the lobby with the same people', () => {
   assert.deepEqual(r.teams, {});
   r.start('h', 2000);
   assert.equal(r.phase, 'auction');
+});
+
+test('squad rules: role minimums block bids that would make them impossible', async () => {
+  const { ROLES, roleCounts } = await import('./game.js');
+  const r = new Room('RULE1', 'h');
+  r.join('h', 'Host'); r.join('f', 'Friend');
+  r.pickTeam('h', 'CSK'); r.pickTeam('f', 'MI');
+  r.updateSettings('h', { maxSquad: 11, minSquad: 11, roleMin: { BAT: 3, BOWL: 4, AR: 2, WK: 2 } });
+  r.start('h', 0);
+  r.tick(3000);
+  const team = r.teams.CSK;
+  // fill 9 slots with batters only -> 2 slots left, but still need BOWL 4, AR 2, WK 2
+  const bats = [...PLAYER_BY_ID.values()].filter((p) => p.role === 'BAT').slice(0, 9);
+  team.squad = bats.map((p) => ({ id: p.id, price: 30, role: 'BAT' }));
+  const batter = [...PLAYER_BY_ID.values()].find((p) => p.role === 'BAT' && !bats.includes(p) && p.roles.length === 1);
+  r.lot = { ...r.lot, id: batter.id, base: batter.base, bid: null, leader: null, status: 'live', passed: [], history: [] };
+  assert.match(r.bidBlocker(team, batter.base), /Need/);
+  assert.deepEqual(Object.keys(roleCounts(team.squad)), ROLES);
+});
+
+test('setRole only allows eligible roles and changes the role used', () => {
+  const r = new Room('ROLE1', 'h');
+  r.join('h', 'Host'); r.join('f', 'F'); r.pickTeam('h', 'CSK'); r.pickTeam('f', 'MI'); r.start('h', 0);
+  const ar = [...PLAYER_BY_ID.values()].find((p) => p.role === 'AR' && p.roles.includes('BAT'));
+  const bat = [...PLAYER_BY_ID.values()].find((p) => p.role === 'BAT' && p.roles.length === 1);
+  r.teams.CSK.squad = [{ id: ar.id, price: 100, role: 'AR' }, { id: bat.id, price: 100, role: 'BAT' }];
+  r.setRole('h', ar.id, 'BAT');
+  assert.equal(r.teams.CSK.squad[0].role, 'BAT');
+  assert.throws(() => r.setRole('h', bat.id, 'BOWL'), /can't play/);
+  assert.throws(() => r.setRole('f', ar.id, 'AR'), /Not in your squad/);
 });

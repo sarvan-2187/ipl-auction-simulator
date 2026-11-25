@@ -173,20 +173,29 @@ async function main() {
     const bowl = st?.careerTables?.bowling?.rows || [];
     const car = st?.careerTables?.batting?.career || {};
     const bcar = st?.careerTables?.bowling?.career || {};
-    // recency-weighted impact: runs scaled by strike rate, wickets scaled by economy
-    let impact = 0;
+
+    // Batting score: runs weighted by recency, scaled by strike rate and (softly) average
+    let batScore = 0;
     for (const r of bat) {
       const w = SEASON_WEIGHT[r.season] ?? 0.05;
       const sr = num(r.strikeRate) || 100;
-      impact += w * num(r.runs) * Math.pow(Math.min(sr, 220) / 135, 1.4);
+      const avg = num(r.average) || 15;
+      batScore += w * num(r.runs) * Math.pow(Math.min(sr, 230) / 135, 1.3) * Math.pow(Math.min(avg, 60) / 28, 0.35);
     }
+    batScore += num(car.runs) * 0.06 * Math.pow((num(car.strikeRate) || 100) / 135, 1.2); // career pedigree
+
+    // Bowling score: wickets weighted by recency, scaled by economy and strike rate
+    let bowlScore = 0;
     for (const r of bowl) {
       const w = SEASON_WEIGHT[r.season] ?? 0.05;
       const econ = num(r.economy) || 9.5;
-      impact += w * num(r.wickets) * 24 * Math.pow(8.8 / Math.max(econ, 5.5), 1.3);
+      const bsr = num(r.strikeRate) || 24;
+      bowlScore += w * num(r.wickets) * 26 * Math.pow(8.8 / Math.max(econ, 5.5), 1.4) * Math.pow(20 / Math.max(bsr, 10), 0.3);
     }
+    bowlScore += num(bcar.wickets) * 2.2 * Math.pow(8.6 / Math.max(num(bcar.economy) || 9.5, 5.5), 1.2);
+
+    const keeping = num(car.catches) * 0.04 + num(car.stumpings) * 0.35; // only counted for keepers
     const matches = num(car.matches) || num(bcar.matches);
-    impact += Math.min(matches, 250) * 0.9 + num(car.runs) * 0.04 + num(bcar.wickets) * 1.2; // pedigree
     const totals = {
       m: matches,
       runs: num(car.runs),
@@ -194,30 +203,67 @@ async function main() {
       wkts: num(bcar.wickets),
       econ: num(bcar.wickets) ? num(bcar.economy) : 0,
     };
-    scored.push({ p, impact, totals });
+    scored.push({ p, batScore, bowlScore, keeping, totals });
   }
-  // impact -> 40..99 by percentile, so the spread stays sensible
-  scored.sort((a, b) => a.impact - b.impact);
-  scored.forEach((x, i) => { x.pct = i / (scored.length - 1); });
+  // Each skill score -> rating by percentile against the specialists for that skill
+  // (batting vs batters/keepers/all-rounders, bowling vs bowlers/all-rounders), so 90+ is genuinely elite.
+  const mainRole = (x) => { const r = retained.get(norm(x.p.name)); return r ? RET_ROLE[r.role] || x.p.role : x.p.role; };
+  const toRating = (key, refRoles) => {
+    const ref = scored.filter((x) => refRoles.includes(mainRole(x))).map((x) => x[key]).sort((a, b) => a - b);
+    for (const x of scored) {
+      if (x[key] <= 0) { x[key + 'R'] = 35; continue; }
+      let lo = 0, hi = ref.length;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (ref[mid] < x[key]) lo = mid + 1; else hi = mid; }
+      const pct = Math.min(1, lo / ref.length);
+      x[key + 'R'] = Math.round(38 + 60 * Math.pow(pct, 1.7));
+    }
+  };
+  toRating('batScore', ['BAT', 'WK', 'AR']);
+  toRating('bowlScore', ['BOWL', 'AR']);
 
   const out = [];
-  for (const { p, pct, totals } of scored) {
+  for (const x of scored) {
+    const { p, totals } = x;
     const r = retained.get(norm(p.name));
     const lname = p.name.toLowerCase();
     const marquee = MARQUEE.includes(lname);
-    let rating = 40 + 57 * Math.pow(pct, 1.5);
+    const role = r ? RET_ROLE[r.role] || p.role : p.role;
+    const bat = x.batScoreR;
+    const bowl = x.bowlScoreR;
+    // All-rounder: a blend, rewarded only when genuinely good at both
+    const ar = Math.round(Math.min(99, 0.42 * bat + 0.42 * bowl + 0.16 * Math.max(bat, bowl) + (Math.min(bat, bowl) >= 70 ? 4 : 0)));
+    const wk = role === 'WK' ? Math.round(Math.min(99, bat + Math.min(3, x.keeping))) : null;
+    const ratings = { BAT: bat, BOWL: bowl, AR: ar, WK: wk };
+
+    // Headline rating = rating for the main role, then floors/overrides
+    let rating = ratings[role] ?? bat;
     if (r) rating = Math.max(rating, 62 + Math.min(r.winningBid, 21) * 1.5);
     if (marquee) rating = Math.max(rating, 86);
     if (p.seasons[0] === '2021' && !marquee) rating -= 4; // not seen since 2021
     rating = Math.round(Math.min(99, rating));
     if (lname in RATING_OVERRIDE) rating = RATING_OVERRIDE[lname];
+    // carry any floor/override lift into the main-role skill rating (and keeper batting)
+    const lift = rating - (ratings[role] ?? bat);
+    if (lift !== 0) {
+      ratings[role] = Math.min(99, Math.max(35, (ratings[role] ?? bat) + lift));
+      if (role === 'WK') ratings.BAT = Math.min(99, ratings.BAT + Math.max(0, lift - 2));
+      if (role === 'AR') { ratings.BAT = Math.min(99, ratings.BAT + Math.round(lift / 2)); ratings.BOWL = Math.min(99, ratings.BOWL + Math.round(lift / 2)); }
+    }
+    // Roles a player can be used in
+    const roles = [role];
+    if (role !== 'BAT' && ratings.BAT >= 60) roles.push('BAT');
+    if (role !== 'BOWL' && (role === 'AR' || ratings.BOWL >= 62)) roles.push('BOWL');
+    if (role !== 'AR' && ratings.BAT >= 62 && ratings.BOWL >= 62) roles.push('AR');
+
     let capped = p.overseas || INDIA_CAPPED.has(lname);
     if (r && !p.overseas) capped = r.capped || capped;
     if (lname in CAPPED_OVERRIDE) capped = CAPPED_OVERRIDE[lname];
     out.push({
       id: p.id,
       name: p.name,
-      role: r ? RET_ROLE[r.role] || p.role : p.role,
+      role,
+      roles,
+      ratings,
       country: p.country,
       cc: p.cc,
       overseas: p.overseas,

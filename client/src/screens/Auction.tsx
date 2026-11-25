@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import SoldCeremony, { type CeremonyTags } from '../components/SoldCeremony';
-import { getPlayer, getTeam, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
+import { bestRoleFor, ratingAs, roleCounts, unmet, ROLES, getPlayer, getTeam, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
 import { call, memberId } from '../lib/socket';
 import type { Lot, Player, RoomState, TeamState } from '../lib/types';
 import { Face, GavelIcon, Silhouette, TeamLogo, initials, teamVars, useToast } from '../components/ui';
 import SquadDrawer from '../components/SquadDrawer';
+import { RoleRules } from '../components/RoleRules';
 import { isMuted, setMuted, sfx } from '../lib/sound';
 
 import { Flag, PlaneIcon, SpeakerIcon } from '../components/Icons';
@@ -38,7 +39,13 @@ function blocker(room: RoomState, team: TeamState | undefined, amount: number | 
   if (team.squad.length >= s.maxSquad) return 'Squad full';
   const os = team.squad.filter((x) => getPlayer(x.id).overseas).length;
   if (p.overseas && os >= s.maxOverseas) return 'Overseas cap';
-  const slotsAfter = Math.max(0, s.minSquad - team.squad.length - 1);
+  // squad rules: open slots after this buy must still cover unmet role minimums
+  const role = bestRoleFor(team.squad, p, s.roleMin);
+  const after = roleCounts(team.squad); after[role]++;
+  const need = unmet(after, s.roleMin);
+  const needTotal = Object.values(need).reduce((a, b) => a + (b || 0), 0);
+  if (needTotal > s.maxSquad - team.squad.length - 1) return `Need ${Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ')}`;
+  const slotsAfter = Math.max(0, s.minSquad - team.squad.length - 1, needTotal);
   if (team.purse - amount < slotsAfter * 30) return 'Low purse';
   return null;
 }
@@ -313,6 +320,19 @@ function PlayerFacts({ p, lot }: { p: Player; lot: Lot }) {
         <div className="fact"><span>Runs</span><b>{p.runs || '—'}{p.runs ? <small className="dim"> @ {p.sr.toFixed(0)} SR</small> : null}</b></div>
         <div className="fact" style={{ gridColumn: 'span 2' }}><span>Wickets</span><b>{p.wkts || '—'}{p.wkts ? <small className="dim"> @ {p.econ.toFixed(2)} econ</small> : null}</b></div>
       </div>
+      <div className="skills" aria-label="Rating by role">
+        {ROLES.map((r) => {
+          const v = r === 'WK' ? p.ratings?.WK ?? null : ratingAs(p, r);
+          const can = (p.roles || [p.role]).includes(r);
+          return (
+            <div key={r} className={`skill ${r === p.role ? 'main' : ''} ${can ? '' : 'off'}`} title={can ? `Can play as ${ROLE_LABEL[r]}` : `Not a ${ROLE_LABEL[r]} option`}>
+              <span>{r}</span>
+              <b>{v ?? '—'}</b>
+              <i style={{ width: `${v ? Math.max(0, (v - 35) / 64) * 100 : 0}%` }} />
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }
@@ -436,14 +456,16 @@ function SidePanel({ room, tab, setTab, myTeam }: { room: RoomState; tab: 'feed'
           );
         }) : <div className="dim" style={{ padding: 16, textAlign: 'center' }}>Last few lots of this round.</div>)}
 
+        {tab === 'squad' && myTeam && <div style={{ padding: '6px 4px 8px' }}><RoleRules room={room} team={myTeam} compact /></div>}
         {tab === 'squad' && myTeam && (myTeam.squad.length ? myTeam.squad.slice().reverse().map((s) => {
           const p = getPlayer(s.id);
+          const as = s.role || p.role;
           return (
             <div key={s.id} className="feed-item">
               <Face p={p} />
               <div style={{ minWidth: 0 }}>
                 <div className="ellipsis pn" style={{ fontSize: 17 }}>{p.name}</div>
-                <div className="dim" style={{ fontSize: 12 }}>{ROLE_LABEL[p.role]}{p.overseas && <> · <PlaneIcon size={11} /></>}</div>
+                <div className="dim" style={{ fontSize: 12 }}>{ROLE_LABEL[as]} · {ratingAs(p, as)}{p.overseas && <> · <PlaneIcon size={11} /></>}</div>
               </div>
               <span className="amt">{money(s.price, { short: true })}</span>
             </div>

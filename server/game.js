@@ -14,7 +14,29 @@ export const DEFAULT_SETTINGS = {
   bidTime: 7, // seconds the clock resets to after each bid
   pool: 'quick', // quick | standard | full
   unsoldRound: true,
+  roleMin: { BAT: 3, BOWL: 4, AR: 2, WK: 2 }, // squad rules
 };
+export const ROLES = ['BAT', 'BOWL', 'AR', 'WK'];
+const ROLE_FILL_ORDER = ['WK', 'BOWL', 'AR', 'BAT']; // scarce roles first when auto-assigning
+
+const rolesOf = (p) => (p.roles && p.roles.length ? p.roles : [p.role]);
+export const ratingAs = (p, role) => (p.ratings && p.ratings[role] != null ? p.ratings[role] : p.rating);
+
+export function roleCounts(squad) {
+  const c = { BAT: 0, BOWL: 0, AR: 0, WK: 0 };
+  for (const x of squad) c[x.role || PLAYER_BY_ID.get(x.id)?.role || 'BAT']++;
+  return c;
+}
+export function unmet(counts, roleMin) {
+  const out = {};
+  for (const r of ROLES) { const n = Math.max(0, (roleMin?.[r] || 0) - counts[r]); if (n) out[r] = n; }
+  return out;
+}
+// Which role a newly bought player takes: an unmet requirement he can fill, else his main role
+export function bestRoleFor(squad, p, roleMin) {
+  const need = unmet(roleCounts(squad), roleMin);
+  return ROLE_FILL_ORDER.find((r) => need[r] && rolesOf(p).includes(r)) || p.role;
+}
 export const POOL_SIZES = { blitz: 60, quick: 120, standard: 220, full: Infinity };
 const MIN_BASE = 30;
 const SOLD_PAUSE_MS = 4800; // time for the gavel + ticket + stamp ceremony
@@ -63,6 +85,17 @@ export function buildQueue(settings, numTeams, seed) {
   const uncapped = PLAYERS.filter((p) => !p.capped);
   const nUn = Math.min(uncapped.length, Math.round(want * 0.28));
   const pool = [...pick(capped, Math.min(capped.length, want - nUn)), ...pick(uncapped, nUn)];
+  // Make sure every team can meet the squad rules: top up each role from the best players left out
+  const inPool = new Set(pool.map((p) => p.id));
+  const roleMin = settings.roleMin || DEFAULT_SETTINGS.roleMin;
+  for (const r of ROLES) {
+    const want = numTeams * ((roleMin[r] || 0) + 1);
+    let have = pool.filter((p) => p.role === r).length;
+    for (const p of [...PLAYERS].filter((x) => x.role === r && !inPool.has(x.id)).sort((a, b) => b.rating - a.rating)) {
+      if (have >= want) break;
+      pool.push(p); inPool.add(p.id); have++;
+    }
+  }
   const sets = [];
   const marquee = shuffle(pool.filter((p) => p.marquee), rnd);
   for (let i = 0; i < marquee.length; i += 10) sets.push({ name: `Marquee Set ${i / 10 + 1}`, ids: marquee.slice(i, i + 10) });
@@ -183,8 +216,28 @@ export class Room {
     if (patch.bidTime != null) s.bidTime = clamp(patch.bidTime, 5, 30);
     if (patch.pool != null && POOL_SIZES[patch.pool] !== undefined) s.pool = patch.pool;
     if (patch.unsoldRound != null) s.unsoldRound = !!patch.unsoldRound;
+    if (patch.roleMin && typeof patch.roleMin === 'object') {
+      const rm = { ...s.roleMin };
+      for (const r of ROLES) if (patch.roleMin[r] != null) rm[r] = clamp(patch.roleMin[r], 0, 8);
+      s.roleMin = rm;
+    }
+    // squad rules can never exceed the squad size
+    const sum = () => ROLES.reduce((a, r) => a + s.roleMin[r], 0);
+    while (sum() > s.maxSquad) { const r = ROLES.reduce((a, b) => (s.roleMin[a] >= s.roleMin[b] ? a : b)); s.roleMin = { ...s.roleMin, [r]: s.roleMin[r] - 1 }; }
     if (s.minSquad > s.maxSquad) s.minSquad = s.maxSquad;
     this.settings = s;
+  }
+
+  // Owners can move a bought player between the roles he's eligible for; his rating follows the role
+  setRole(memberId, playerId, role) {
+    const m = this.members.get(memberId);
+    const team = m && this.teams[m.team];
+    if (!team) throw new Error('You have no squad');
+    const entry = team.squad.find((x) => x.id === Number(playerId));
+    if (!entry) throw new Error('Not in your squad');
+    const p = PLAYER_BY_ID.get(entry.id);
+    if (!rolesOf(p).includes(role)) throw new Error(`${p.name} can't play as ${role}`);
+    entry.role = role;
   }
 
   assertHost(id) { if (id !== this.hostId) throw new Error('Only the host can do that'); }
@@ -216,7 +269,14 @@ export class Room {
     const s = this.settings;
     if (team.squad.length >= s.maxSquad) return 'Squad full';
     if (p.overseas && this.overseasCount(team) >= s.maxOverseas) return 'Overseas limit reached';
-    const slotsAfter = Math.max(0, s.minSquad - team.squad.length - 1);
+    // Squad rules: after this buy, the open slots must still cover every unmet role minimum
+    const role = bestRoleFor(team.squad, p, s.roleMin);
+    const after = roleCounts(team.squad); after[role]++;
+    const need = unmet(after, s.roleMin);
+    const needTotal = Object.values(need).reduce((a, b) => a + b, 0);
+    const slotsLeft = s.maxSquad - team.squad.length - 1;
+    if (needTotal > slotsLeft) return `Need ${Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ')}`;
+    const slotsAfter = Math.max(0, s.minSquad - team.squad.length - 1, needTotal);
     if (team.purse - amount < slotsAfter * MIN_BASE) return 'Not enough purse';
     return null;
   }
@@ -298,7 +358,7 @@ export class Room {
     if (lot.leader) {
       const team = this.teams[lot.leader];
       team.purse -= lot.bid;
-      team.squad.push({ id: lot.id, price: lot.bid });
+      team.squad.push({ id: lot.id, price: lot.bid, role: bestRoleFor(team.squad, p, this.settings.roleMin) });
       lot.status = 'sold';
       this.addLog({ kind: 'sold', id: lot.id, team: team.code, amount: lot.bid, text: `${p.name} SOLD to ${team.code}` });
     } else {
@@ -374,9 +434,12 @@ export class Room {
     const s = this.settings;
     const r = mulberry32(this.seed ^ (p.id * 31 + team.code.charCodeAt(0) * 7919 + team.code.length))();
     let v = fairValue(p) * (0.7 + r * 0.65);
-    const roleCount = team.squad.filter((x) => PLAYER_BY_ID.get(x.id)?.role === p.role).length;
+    const counts = roleCounts(team.squad);
     const target = { BAT: 7, BOWL: 8, AR: 5, WK: 3 }[p.role];
-    if (roleCount >= target) v *= 0.55;
+    if (counts[p.role] >= target) v *= 0.55;
+    // chase roles the squad rules still need
+    const need = unmet(counts, s.roleMin);
+    if (rolesOf(p).some((r) => need[r])) v *= this.round === 2 || this.queue.length - this.idx < 25 ? 1.8 : 1.3;
     const needed = Math.max(0, s.minSquad - team.squad.length);
     const left = this.queue.length - this.idx;
     if (needed > 0 && left < needed * 3) v *= 1.4;

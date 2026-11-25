@@ -127,6 +127,21 @@ export default function Lobby({ room }: { room: RoomState }) {
               {isHost ? <div className="stepper"><button onClick={() => step('maxOverseas', -1)}>−</button><span>{s.maxOverseas}</span><button onClick={() => step('maxOverseas', 1)}>+</button></div> : <b>{s.maxOverseas}</b>}
             </div>
             <div className="setting">
+              <label>Squad rules<small>Minimum batters, bowlers, all-rounders and keepers per squad</small></label>
+              <div className="role-steppers">
+                {(['BAT', 'BOWL', 'AR', 'WK'] as const).map((r) => {
+                  const rm = s.roleMin || { BAT: 3, BOWL: 4, AR: 2, WK: 2 };
+                  return isHost ? (
+                    <div className="stepper" key={r}>
+                      <button onClick={() => set({ roleMin: { ...rm, [r]: Math.max(0, rm[r] - 1) } })} aria-label={`Fewer ${r}`}>−</button>
+                      <span style={{ minWidth: 0, padding: '0 4px' }}>{r} {rm[r]}</span>
+                      <button onClick={() => set({ roleMin: { ...rm, [r]: rm[r] + 1 } })} aria-label={`More ${r}`}>+</button>
+                    </div>
+                  ) : <span className="chip" key={r}>{r} {rm[r]}</span>;
+                })}
+              </div>
+            </div>
+            <div className="setting">
               <label>Bid clock<small>Seconds on the clock after each bid</small></label>
               {isHost ? <div className="stepper"><button onClick={() => step('bidTime', -1)}>−</button><span>{s.bidTime}s</span><button onClick={() => step('bidTime', 1)}>+</button></div> : <b>{s.bidTime}s</b>}
             </div>

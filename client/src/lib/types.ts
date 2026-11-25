@@ -17,6 +17,8 @@ export interface Player {
   econ: number;
   marquee: boolean;
   rating: number;
+  roles: Role[];
+  ratings: { BAT: number; BOWL: number; AR: number; WK: number | null };
   base: number;
   photo: 'cut' | 'wiki' | null;
 }
@@ -44,7 +46,7 @@ export interface TeamState {
   code: string;
   ownerId: string;
   purse: number;
-  squad: { id: number; price: number }[];
+  squad: { id: number; price: number; role?: Role }[];
 }
 
 export interface Lot {
@@ -71,6 +73,7 @@ export interface Settings {
   bidTime: number;
   pool: 'blitz' | 'quick' | 'standard' | 'full';
   unsoldRound: boolean;
+  roleMin: Record<Role, number>;
 }
 
 export interface LogEntry {
