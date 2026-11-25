@@ -429,6 +429,25 @@ export class Room {
     team.xiLocked = !!lock;
   }
 
+  // Test-only: give every team a legal 18-man squad, then end the auction
+  devFillAndFinish() {
+    const taken = new Set();
+    const order = [...PLAYERS].sort((a, b) => b.rating - a.rating);
+    const want = { WK: 3, BAT: 6, AR: 3, BOWL: 6 };
+    const teams = this.activeTeams();
+    for (const [role, n] of Object.entries(want)) {
+      for (let k = 0; k < n; k++) for (const t of teams) {
+        const os = this.overseasCount(t);
+        const p = order.find((x) => !taken.has(x.id) && x.role === role && (!x.overseas || os < this.settings.maxOverseas));
+        if (!p) continue;
+        taken.add(p.id);
+        t.squad.push({ id: p.id, price: p.base, role });
+        t.purse -= p.base;
+      }
+    }
+    this.finish();
+  }
+
   finish() {
     // computer teams lock their best XI straight away
     for (const t of Object.values(this.teams)) {

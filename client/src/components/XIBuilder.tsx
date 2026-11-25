@@ -9,11 +9,12 @@ import type { Player, Role, RoomState, TeamState } from '../lib/types';
 import { TeamLogo, initials, useToast } from './ui';
 import { sfx } from '../lib/sound';
 
-const ROWS: { role: Role; label: string; y: number }[] = [
-  { role: 'WK', label: 'Wicket-keeper', y: 13 },
-  { role: 'BAT', label: 'Batters', y: 36 },
-  { role: 'AR', label: 'All-rounders', y: 60 },
-  { role: 'BOWL', label: 'Bowlers', y: 83 },
+// y = row height on the ground; half = how far from centre the row may spread (the oval is narrower at the ends)
+const ROWS: { role: Role; label: string; y: number; half: number }[] = [
+  { role: 'WK', label: 'Wicket-keeper', y: 13, half: 26 },
+  { role: 'BAT', label: 'Batters', y: 36, half: 39 },
+  { role: 'AR', label: 'All-rounders', y: 60, half: 39 },
+  { role: 'BOWL', label: 'Bowlers', y: 83, half: 33 },
 ];
 const short = (p: Player) => {
   const parts = p.name.split(' ');
@@ -109,14 +110,15 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
                   const p = getPlayer(id);
                   const role = row.role;
                   const n = row.list.length;
-                  const x = n === 1 ? 50 : 10 + (80 * i) / (n - 1);
+                  const spread = Math.min(row.half, 9 * (n - 1)); // keep small rows bunched in the middle
+                  const x = n === 1 ? 50 : 50 - spread + (2 * spread * i) / (n - 1);
                   const src = playerPhoto(p);
                   return (
+                    <div key={id} className={`head-pos ${sel === id ? 'sel' : ''}`} style={{ left: `${x}%`, top: `${row.y}%` }}>
                     <motion.button
-                      key={id}
                       layoutId={`xi-${id}`}
                       className={`head ${sel === id ? 'sel' : ''}`}
-                      style={{ left: `${x}%`, top: `${row.y}%`, ['--ring' as any]: ringColor }}
+                      style={{ ['--ring' as any]: ringColor }}
                       initial={{ opacity: 0, scale: 0.3, y: 40 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.3, y: 30 }}
@@ -139,6 +141,7 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
                         )}
                       </AnimatePresence>
                     </motion.button>
+                    </div>
                   );
                 }))}
               </AnimatePresence>

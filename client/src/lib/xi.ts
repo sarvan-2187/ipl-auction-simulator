@@ -51,7 +51,10 @@ export type Suggestion = { text: string; delta: number; apply: number[] };
 export function suggestions(ids: number[], squad: Entry[]): Suggestion[] {
   const base = xiInfo(ids, squad).rating;
   const bench = squad.map((e) => e.id).filter((id) => !ids.includes(id));
-  const name = (p: Player) => p.name.split(' ').slice(-1)[0];
+  // "S. Yadav" vs "K. Yadav": add an initial when the surname alone is ambiguous in this squad
+  const surname = (p: Player) => p.name.split(' ').slice(-1)[0];
+  const clash = (p: Player) => squad.filter((e) => surname(getPlayer(e.id)) === surname(p)).length > 1;
+  const name = (p: Player) => (clash(p) ? `${p.name[0]}. ${surname(p)}` : surname(p));
   const out: Suggestion[] = [];
   if (ids.length < Math.min(XI_SIZE, squad.length)) {
     for (const id of bench) {

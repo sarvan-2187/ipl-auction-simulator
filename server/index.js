@@ -40,6 +40,16 @@ function health(_req, res) {
 }
 app.get('/api/health', health);
 app.get('/healthz', health);
+// Test-only shortcut (DEV_TOOLS=1): fill every squad and jump to the Playing XI screen
+if (process.env.DEV_TOOLS === '1') {
+  app.post('/api/dev/finish/:code', (req, res) => {
+    const r = rooms.get(req.params.code);
+    if (!r || r.phase !== 'auction') return res.status(400).json({ error: 'room not in auction' });
+    r.devFillAndFinish();
+    broadcast(r);
+    res.json({ ok: true });
+  });
+}
 app.all('/api/*', (_req, res) => res.status(404).json({ status: 'error', error: 'Not found' }));
 app.get('*', (_req, res) => res.sendFile(path.join(DIST, 'index.html'), (err) => err && res.status(404).send('Run "npm run build" first, or use "npm run dev".')));
 

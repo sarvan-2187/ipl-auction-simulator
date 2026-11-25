@@ -866,3 +866,15 @@ body { font-feature-settings: 'ss01' off; }
 }
 .ground .g-pitch { width: 6%; height: 24%; opacity: 0.35; }
 .ground .g-pitch i { display: none; }
+
+/* head positioning lives on a wrapper so animations can't undo the centring */
+.head-pos { position: absolute; transform: translate(-50%, -50%); z-index: 2; }
+.head-pos.sel { z-index: 6; }
+.head { position: relative; transform: none; }
+.head .h-name { max-width: 26cqi; }
+.head .h-menu { left: 50%; translate: -50% 0; }
+@media (max-width: 640px) {
+  .head { width: clamp(50px, 17cqi, 70px); }
+  .head .h-name { font-size: 11px; padding: 1px 6px; max-width: 24cqi; }
+  .head .h-rt { font-size: 10px; min-width: 20px; padding: 1px 4px; }
+}
