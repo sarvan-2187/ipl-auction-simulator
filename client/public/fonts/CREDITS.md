@@ -14,3 +14,8 @@ Font files were taken from the community collection https://github.com/Return761
 
 Ndot, NType and Lettera are proprietary typefaces and are used here only in a private, non-commercial game.
 They are not licensed for redistribution. Keep this repository and any deployment private.
+
+# Emoji & flag credits
+
+- **Emoji**: [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji) 3D renders (MIT), via the `@lobehub/fluent-emoji-3d` package. 15 images self-hosted in `/public/emoji`.
+- **Flags**: [flag-icons](https://github.com/lipis/flag-icons) by Panayiotis Lipiridis (MIT), in `/public/flags`. The West Indies cricket flag is a simple custom drawing.

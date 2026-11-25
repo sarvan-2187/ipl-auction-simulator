@@ -6,6 +6,7 @@ import { getTeam, money, ROLE_LABEL } from '../lib/data';
 import { sfx } from '../lib/sound';
 import type { Lot, Player } from '../lib/types';
 import { TeamLogo } from './ui';
+import { Emoji } from './Emoji';
 
 const T_TICKET = 0.22; // s after hammer
 const T_STAMP = 0.95;
@@ -177,9 +178,9 @@ export default function SoldCeremony({ lot, player, mine, roomCode, tags }: { lo
       {/* badges */}
       {sold && (tags.record || tags.steal || tags.war) && (
         <div className="c-badges">
-          {[tags.record && ['🏆', 'Record buy'], tags.steal && ['💎', 'Steal!'], tags.war && ['⚔️', 'Bidding war']].filter(Boolean).map((b, i) => (
+          {[tags.record && ['trophy', 'Record buy'], tags.steal && ['gem', 'Steal!'], tags.war && ['swords', 'Bidding war']].filter(Boolean).map((b, i) => (
             <motion.span key={i} className="c-badge" initial={{ y: 20, opacity: 0, scale: 0.6 }} animate={{ y: 0, opacity: 1, scale: 1 }} transition={{ delay: T_STAMP + 0.35 + i * 0.12, type: 'spring', stiffness: 400, damping: 18 }}>
-              {(b as string[])[0]} {(b as string[])[1]}
+              <Emoji name={(b as string[])[0]} size={22} /> {(b as string[])[1]}
             </motion.span>
           ))}
         </div>

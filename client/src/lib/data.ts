@@ -28,12 +28,6 @@ export const playerPhoto = (p: Player) => (p.photo === 'cut' ? `/players/${p.id}
 export const ROLE_LABEL: Record<Role, string> = { BAT: 'Batter', BOWL: 'Bowler', AR: 'All-Rounder', WK: 'Wicket-Keeper' };
 export const ROLE_SHORT: Record<Role, string> = { BAT: 'BAT', BOWL: 'BOWL', AR: 'AR', WK: 'WK' };
 
-export function flagEmoji(cc: string) {
-  if (cc === 'gb-eng') return '\u{1F3F4}\u{E0067}\u{E0062}\u{E0065}\u{E006E}\u{E0067}\u{E007F}';
-  if (cc === 'wi') return '🌴';
-  if (!cc || cc.length !== 2) return '🏳️';
-  return String.fromCodePoint(...[...cc.toUpperCase()].map((c) => 0x1f1a5 + c.charCodeAt(0)));
-}
 
 export function money(lakhs: number | null | undefined, opts: { short?: boolean } = {}) {
   if (lakhs == null) return '—';

@@ -8,6 +8,7 @@ import { Room, makeCode } from './game.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, '..', 'client', 'dist');
 const PORT = process.env.PORT || 3001;
+const REACTIONS = new Set(['fire', 'joy', 'scream', 'clap', 'money', 'clown', 'huff', 'pray', 'mindblown', 'skull']);
 
 const app = express();
 app.use(express.static(DIST, { maxAge: '1h', index: false }));
@@ -96,8 +97,12 @@ io.on('connection', (socket) => {
     if (m && name) m.name = String(name).slice(0, 18);
   });
 
-  socket.on('react', ({ emoji }) => {
-    if (!room || typeof emoji !== 'string' || emoji.length > 8) return;
+  let lastReact = 0;
+  socket.on('react', ({ emoji } = {}) => {
+    if (!room || !REACTIONS.has(emoji)) return;
+    const now = Date.now();
+    if (now - lastReact < 300) return; // spam guard
+    lastReact = now;
     const m = room.members.get(memberId);
     io.to(room.code).emit('react', { emoji, from: m?.name, team: m?.team, id: Math.random().toString(36).slice(2) });
   });

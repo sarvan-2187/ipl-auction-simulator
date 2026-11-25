@@ -10,7 +10,8 @@ A real-time multiplayer IPL auction game for friends. Create a room, share the 5
 - **Computer players** (Computer A, Computer B, …) fill empty franchises when the host taps `+ CPU`
 - Works in phone portrait and landscape (landscape fits the whole auction on one screen)
 - Marquee sets → role sets → uncapped sets, with an optional **accelerated round** for unsold players
-- Jump bids (+50L / +1 Cr), Pass, keyboard shortcuts (Space = bid, P = pass), emoji reactions and synthesized sounds
+- Jump bids (+50L / +1 Cr), Pass, keyboard shortcuts (Space = bid, P = pass) and synthesized sounds
+- 3D emoji reactions that float up with the sender's name (a pop-up tray on phones), rate-limited against spam
 - The hammer moment: gavel slam and stage shake, an official auction ticket flips up with the price counting up, then an ink-textured rubber stamp (SOLD / UNSOLD) slams onto it with splatter, light rays, confetti and crowd noise. Record buy / Steal / Bidding war badges, and a gold "Welcome to …" banner when you're the buyer
 - Results screen: best-XI strength ranking, most expensive buy, steal of the auction, and a "copy squads for WhatsApp" button
 
@@ -80,5 +81,7 @@ scripts/fetch-data.mjs data + image scraper
 - **Space Grotesk** (SIL OFL): body text, and the ₹ sign, which Ndot/NType don't include
 
 Font files come from the community collection [Return761/Nothing-Fonts](https://github.com/Return761/Nothing-Fonts), converted to WOFF2. See `client/public/fonts/CREDITS.md`. Ndot, NType and Lettera are proprietary and are used here only for a private, non-commercial game.
+
+**Emoji** are Microsoft's Fluent Emoji 3D (MIT) and **flags** are from flag-icons (MIT). Both are self-hosted so every phone and PC shows the same art, including Windows, which has no flag emoji.
 
 Team names, logos and player photos belong to their owners (BCCI/IPL and the franchises). This repo is a private, non-commercial game for friends.
