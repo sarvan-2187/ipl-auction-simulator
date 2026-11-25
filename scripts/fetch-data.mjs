@@ -66,6 +66,8 @@ Kuldeep Yadav,Barinder Sran,Stuart Binny,Yusuf Pathan,Irfan Pathan,Ashok Dinda,M
   .split(',').map((x) => x.trim().toLowerCase()));
 // Feed corrections
 const CAPPED_OVERRIDE = { 'ravindra jadeja': true };
+// Manual rating overrides (name -> rating), applied after the stats-based rating
+const RATING_OVERRIDE = { 'hardik pandya': 96 };
 
 const ROLE_MAP = { batsman: 'BAT', bowler: 'BOWL', allrounder: 'AR', wicketkeeper: 'WK' };
 const RET_ROLE = { Batter: 'BAT', Bowler: 'BOWL', 'All-Rounder': 'AR', Allrounder: 'AR', 'All Rounder': 'AR', Wicketkeeper: 'WK' };
@@ -208,6 +210,7 @@ async function main() {
     if (marquee) rating = Math.max(rating, 86);
     if (p.seasons[0] === '2021' && !marquee) rating -= 4; // not seen since 2021
     rating = Math.round(Math.min(99, rating));
+    if (lname in RATING_OVERRIDE) rating = RATING_OVERRIDE[lname];
     let capped = p.overseas || INDIA_CAPPED.has(lname);
     if (r && !p.overseas) capped = r.capped || capped;
     if (lname in CAPPED_OVERRIDE) capped = CAPPED_OVERRIDE[lname];
