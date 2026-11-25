@@ -307,7 +307,6 @@ function TeamRow({ t, room, owner, onOpen }: { t: TeamState; room: RoomState; ow
   const lot = room.lot;
   const leading = lot?.leader === t.code && lot.status === 'live';
   const passed = lot?.status === 'live' && lot.passed.includes(t.code);
-  const pct = (t.purse / room.settings.purse) * 100;
   return (
     <button className={`tcard ${leading ? 'leading' : ''} ${passed ? 'passed' : ''} ${t.ownerId === memberId ? 'me' : ''}`} style={teamVars(t.code)} onClick={onOpen} aria-label={`${t.code} squad`}>
       <TeamLogo code={t.code} size={40} />
@@ -321,7 +320,6 @@ function TeamRow({ t, room, owner, onOpen }: { t: TeamState; room: RoomState; ow
         </div>
       </div>
       <div className="purse">{money(t.purse, { short: true })}</div>
-      <div className="bar"><i style={{ width: `${pct}%` }} /></div>
     </button>
   );
 }

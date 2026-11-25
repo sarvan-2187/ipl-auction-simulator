@@ -730,3 +730,53 @@ body { font-feature-settings: 'ss01' off; }
 .tcard .tag-pass { font-weight: 600; color: var(--text-3); letter-spacing: 0; text-transform: none; font-size: inherit; }
 .os-tag { display: inline-block; vertical-align: middle; margin-left: 4px; font-family: var(--font-ui); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #9fd3ff; border: 1px solid rgba(120, 190, 255, 0.35); border-radius: 5px; padding: 1px 5px; }
 .team-strip .w-players { display: none; }
+.tcard .bar { display: none !important; }
+.tcard { padding: 10px 10px; }
+
+/* ---------- laptops (short desktop screens): keep the bid box fully visible ---------- */
+@media (min-width: 821px) and (max-height: 900px) {
+  .a-top { padding-top: 8px; padding-bottom: 8px; }
+  .pinfo { padding: 14px 18px; gap: 9px; }
+  .pname { font-size: clamp(34px, 3.6vw, 50px); }
+  .pinfo > .row .chip { height: 24px; font-size: 11px; }
+  .facts { grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .facts .fact { grid-column: auto !important; padding: 7px 9px; }
+  .fact span { font-size: 10px; }
+  .fact b { font-size: 15px; }
+  .fact small { display: none; }
+  .skill { padding: 5px 9px 7px; }
+  .skill b { font-size: 16px; }
+  .race .eyebrow { margin-bottom: 4px !important; }
+  .race-team { width: 52px; padding: 5px 3px 4px; }
+  .race-team .logo { width: 26px !important; height: 26px !important; }
+  .race-team span { font-size: 9px; }
+  .bidbox { padding: 12px 16px; }
+  .bidbox .amount { font-size: clamp(46px, 4.6vw, 70px); }
+  .timer-num { font-size: 52px !important; }
+  .bidbox .leader { min-height: 36px; }
+  .bidbox .leader img { width: 36px !important; height: 36px !important; }
+  .bidbox .leader b { font-size: 22px; }
+  .timer { margin-top: 8px; }
+  .controls { padding: 10px; }
+  .bid-btn { height: 64px; }
+  .pass-btn { height: 64px; }
+}
+@media (min-width: 821px) and (max-height: 740px) {
+  .race { display: none; }
+  .skills { display: none; }
+  .pname .first { display: none; }
+}
+
+/* ---------- money never wraps; the big bid amount scales to its box ---------- */
+.bidbox .amount, .tcard .purse, .feed-item .amt, .t-foot b, .bid-btn, .stamp .to, .c-mine, .chip, .fact b, .squad-row .display.gold,
+.room-code .code, .stepper span, .live-dock .ld-text, .rr b, .skill b { white-space: nowrap; }
+.bidbox { container-type: inline-size; }
+.bidbox > .row > div:first-child { min-width: 0; flex: 1; }
+.bidbox .amount { font-size: min(clamp(58px, 6.4vw, 92px), 22cqi); }
+@media (min-width: 821px) and (max-height: 900px) { .bidbox .amount { font-size: min(clamp(46px, 4.6vw, 70px), 22cqi); } }
+@media (max-width: 820px) and (orientation: portrait) { .bidbox .amount { font-size: min(50px, 22cqi); } }
+@media (orientation: landscape) and (max-height: 520px) { .bidbox .amount { font-size: min(38px, 20cqi); } }
+.bid-btn { overflow: hidden; text-overflow: ellipsis; padding: 0 12px; }
+.tcard { grid-template-columns: 40px minmax(0, 1fr) auto; }
+.tcard .purse { font-size: clamp(16px, 1.5vw, 22px); }
+.squad-row { grid-template-columns: 46px minmax(0, 1fr) auto; }
