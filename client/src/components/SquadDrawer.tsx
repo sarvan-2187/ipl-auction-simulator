@@ -54,7 +54,7 @@ export default function SquadDrawer({ room, code, onClose }: { room: RoomState; 
                     <div className="squad-row" key={s.id} style={teamVars(code)}>
                       <Face p={p} />
                       <div style={{ minWidth: 0 }}>
-                        <div className="ellipsis" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 17 }}>{p.name} {p.overseas && <span className="dim" title="Overseas"><PlaneIcon size={13} /></span>}</div>
+                        <div className="ellipsis pn" style={{ fontSize: 20 }}>{p.name} {p.overseas && <span className="dim" title="Overseas"><PlaneIcon size={13} /></span>}</div>
                         <div className="dim" style={{ fontSize: 12 }}><Flag cc={p.cc} /> {p.country} · RTG {p.rating}</div>
                       </div>
                       <div className="display gold" style={{ fontSize: 24 }}>{money(s.price)}</div>

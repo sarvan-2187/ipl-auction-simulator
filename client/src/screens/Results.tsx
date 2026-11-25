@@ -50,7 +50,7 @@ export default function Results({ room }: { room: RoomState }) {
       <Face p={b.p} />
       <div style={{ minWidth: 0 }}>
         <div className="eyebrow gold">{title}</div>
-        <div className="display ellipsis" style={{ fontSize: 26 }}>{b.p.name}</div>
+        <div className="display ellipsis pn" style={{ fontSize: 30 }}>{b.p.name}</div>
         <div className="muted" style={{ fontSize: 13 }}><b>{b.team}</b> · {money(b.price)} · {note}</div>
       </div>
     </div>
@@ -110,7 +110,7 @@ export default function Results({ room }: { room: RoomState }) {
                   {r.xi.map((p) => (
                     <div key={p.id} className="row" style={{ gap: 8 }}>
                       <Face p={p} className="mini-face" />
-                      <span className="ellipsis" style={{ fontFamily: 'var(--font-ui)', fontWeight: 600, fontSize: 14 }}>{p.name}</span>
+                      <span className="ellipsis pn" style={{ fontSize: 16 }}>{p.name}</span>
                     </div>
                   ))}
                 </div>

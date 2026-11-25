@@ -284,7 +284,7 @@ function PlayerArt({ p, leader }: { p: Player; leader: string | null }) {
       <div className="rating" title="Auction rating"><div><b>{p.rating}</b><span>RTG</span></div></div>
       {p.marquee && <span className="chip chip-gold marquee-tag">Marquee</span>}
       <div className="nameplate only-mobile">
-        <div className="display">{p.name}</div>
+        <div className="display pn">{p.name}</div>
         <div className="np-sub">{ROLE_LABEL[p.role]} · <Flag cc={p.cc} /> {p.country}</div>
       </div>
     </>
@@ -302,7 +302,7 @@ function PlayerFacts({ p, lot }: { p: Player; lot: Lot }) {
         <span className={`chip ${p.overseas ? 'chip-os' : ''}`}><Flag cc={p.cc} /> {p.country}</span>
         <span className="chip">{p.capped ? 'Capped' : 'Uncapped'}</span>
       </div>
-      <motion.div key={p.id} className="pname display" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.div key={p.id} className="pname display pn" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         {first && <span className="first">{first}</span>}
         {last}
       </motion.div>
@@ -414,7 +414,7 @@ function SidePanel({ room, tab, setTab, myTeam }: { room: RoomState; tab: 'feed'
             <motion.div key={`${l.t}-${i}`} className="feed-item" initial={i === 0 ? { opacity: 0, x: 20 } : false} animate={{ opacity: 1, x: 0 }}>
               <Face p={p} />
               <div style={{ minWidth: 0 }}>
-                <div className="ellipsis" style={{ fontSize: 15 }}>{p.name}</div>
+                <div className="ellipsis pn" style={{ fontSize: 17 }}>{p.name}</div>
                 <div className="dim" style={{ fontSize: 12 }}>{l.kind === 'sold' ? `to ${l.team}` : 'Unsold'}</div>
               </div>
               {l.kind === 'sold' ? <div className="row" style={{ gap: 6 }}><span className="amt">{money(l.amount, { short: true })}</span><TeamLogo code={l.team!} size={24} /></div> : <span className="dim">—</span>}
@@ -428,7 +428,7 @@ function SidePanel({ room, tab, setTab, myTeam }: { room: RoomState; tab: 'feed'
             <div key={id} className="up-item">
               <Face p={p} />
               <div className="grow">
-                <div className="ellipsis" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 16 }}>{p.name}</div>
+                <div className="ellipsis pn" style={{ fontSize: 18 }}>{p.name}</div>
                 <div className="dim" style={{ fontSize: 12 }}>{ROLE_LABEL[p.role]} · <Flag cc={p.cc} /> {p.overseas ? 'Overseas' : 'India'}</div>
               </div>
               <span className="chip chip-gold">{money(p.base)}</span>
@@ -442,7 +442,7 @@ function SidePanel({ room, tab, setTab, myTeam }: { room: RoomState; tab: 'feed'
             <div key={s.id} className="feed-item">
               <Face p={p} />
               <div style={{ minWidth: 0 }}>
-                <div className="ellipsis" style={{ fontSize: 15 }}>{p.name}</div>
+                <div className="ellipsis pn" style={{ fontSize: 17 }}>{p.name}</div>
                 <div className="dim" style={{ fontSize: 12 }}>{ROLE_LABEL[p.role]}{p.overseas && <> · <PlaneIcon size={11} /></>}</div>
               </div>
               <span className="amt">{money(s.price, { short: true })}</span>

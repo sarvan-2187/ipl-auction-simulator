@@ -97,7 +97,7 @@ export default function SoldCeremony({ lot, player, mine, roomCode, tags }: { lo
             </div>
             <div className="t-name">
               {first && <span className="t-first">{first}</span>}
-              <span className="t-last">{last}</span>
+              <span className="t-last pn">{last}</span>
             </div>
             <div className="t-meta">{ROLE_LABEL[player.role]} · {player.overseas ? 'Overseas' : 'India'} · {player.capped ? 'Capped' : 'Uncapped'}</div>
             <div className="t-foot">
