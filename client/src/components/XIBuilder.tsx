@@ -32,6 +32,12 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
   const tips = useMemo(() => (editable ? suggestions(ids, squad) : []), [ids, squad, editable]);
   const bench = squad.filter((e) => !ids.includes(e.id)).sort((a, b) => ratingAs(getPlayer(b.id), roleIn(squad, b.id)) - ratingAs(getPlayer(a.id), roleIn(squad, a.id)));
 
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setSel(null); };
+    window.addEventListener('keydown', k);
+    return () => window.removeEventListener('keydown', k);
+  }, []);
+
   // follow server updates when viewing someone else's XI / after locking
   useEffect(() => { if (!editable) setIds(team.xi ?? []); }, [team.xi, editable]);
 

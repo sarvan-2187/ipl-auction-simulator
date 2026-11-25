@@ -860,3 +860,9 @@ body { font-feature-settings: 'ss01' off; }
 .xi-modal .xi-side:empty { display: none; }
 .xi-modal .xi-close { position: absolute; top: 18px; right: 18px; z-index: 3; }
 .xi-modal .xi-top { padding-right: 64px; }
+/* XI ground: fit the screen height on desktop, subtler pitch */
+@media (min-width: 981px) {
+  .ground { width: auto; height: min(calc(100dvh - 250px), 760px); max-width: 100%; min-height: 460px; }
+}
+.ground .g-pitch { width: 6%; height: 24%; opacity: 0.35; }
+.ground .g-pitch i { display: none; }
