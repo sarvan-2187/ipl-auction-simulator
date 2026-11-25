@@ -84,7 +84,7 @@ export default function Results({ room }: { room: RoomState }) {
                 <TeamLogo code={r.t.code} size={62} />
                 <div className="grow">
                   <div className="display" style={{ fontSize: 30 }}>{r.t.code}{owner?.id === memberId ? ' · You' : ''}</div>
-                  <div className="muted" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700 }}>{owner?.bot ? '🤖 ' : ''}{owner?.name}</div>
+                  <div className="muted" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700 }}>{owner?.name}{owner?.bot ? ' · computer' : ''}</div>
                 </div>
                 <div className="rank">#{i + 1}</div>
               </div>

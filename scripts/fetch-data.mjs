@@ -14,7 +14,9 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUB = path.join(ROOT, 'client', 'public');
 const BASE = 'https://www.iplt20.com';
 const UA = { 'user-agent': 'Mozilla/5.0 (auction-sim data script)', accept: 'image/webp,application/json,*/*' };
-const SEASONS = ['2026', '2025', '2024', '2023'];
+const SEASONS = ['2026', '2025', '2024', '2023', '2022', '2021'];
+const SEASON_WEIGHT = { 2026: 1, 2025: 0.85, 2024: 0.7, 2023: 0.5, 2022: 0.35, 2021: 0.25, 2020: 0.15, 2019: 0.1 };
+const CACHE = path.join(ROOT, 'scripts', '.cache', 'stats');
 const FORCE = process.argv.includes('--force');
 
 export const TEAMS = [
@@ -40,8 +42,30 @@ Phil Salt,Tilak Varma,Ishan Kishan,Mohammed Shami,Bhuvneshwar Kumar,Josh Hazlewo
 Liam Livingstone,Marcus Stoinis,Mitchell Marsh,Aiden Markram,David Miller,Shivam Dube,Prasidh Krishna,Riyan Parag,
 Ravi Bishnoi,Harshal Patel,Tristan Stubbs,Cameron Green,Rachin Ravindra,Jake Fraser-McGurk,Noor Ahmad,Matheesha Pathirana,
 Will Jacks,Dewald Brevis,Nitish Kumar Reddy,Priyansh Arya,Prabhsimran Singh,Shashank Singh,Mitchell Santner,Jofra Archer,
-Marco Jansen,Lockie Ferguson,Kane Williamson,Faf du Plessis,Quinton de Kock,Venkatesh Iyer,Washington Sundar,Sai Kishore`
+Marco Jansen,Lockie Ferguson,Kane Williamson,Faf du Plessis,Quinton de Kock,Venkatesh Iyer,Washington Sundar,Sai Kishore,
+Mahendra Singh Dhoni,Kieron Pollard,David Warner,Ben Stokes,Shikhar Dhawan,Sam Curran,Wanindu Hasaranga`
   .split(',').map((s) => s.trim().toLowerCase());
+
+// Indian players with international caps (names as written on iplt20.com). Everyone overseas
+// counts as capped. Indians not listed here (and not marked capped in the retention feed) are uncapped.
+const INDIA_CAPPED = new Set(`Virat Kohli,Rohit Sharma,Jasprit Bumrah,Shubman Gill,Rishabh Pant,Shreyas Iyer,KL Rahul,Hardik Pandya,
+Suryakumar Yadav,Yashasvi Jaiswal,Sanju Samson,Ruturaj Gaikwad,Arshdeep Singh,Mohammed Siraj,Kuldeep Yadav,Ravindra Jadeja,
+Axar Patel,Varun Chakaravarthy,Rinku Singh,Yuzvendra Chahal,Sai Sudharsan,Tilak Varma,Ishan Kishan,Mohammed Shami,
+Bhuvneshwar Kumar,Shivam Dube,Prasidh Krishna,Riyan Parag,Ravi Bishnoi,Harshal Patel,Nitish Kumar Reddy,Washington Sundar,
+Abhishek Sharma,Mahendra Singh Dhoni,Shikhar Dhawan,Dinesh Karthik,Ravichandran Ashwin,Ajinkya Rahane,Deepak Chahar,
+Shardul Thakur,Umesh Yadav,Ishant Sharma,Mukesh Kumar,Avesh Khan,Umran Malik,Navdeep Saini,Khaleel Ahmed,Jaydev Unadkat,
+Mohit Sharma,Sandeep Sharma,T Natarajan,Washington Sundar,Venkatesh Iyer,Deepak Hooda,Krunal Pandya,Rahul Tripathi,
+Prithvi Shaw,Mayank Agarwal,Manish Pandey,Kedar Jadhav,Ambati Rayudu,Wriddhiman Saha,Dhruv Jurel,Jitesh Sharma,
+Rajat Patidar,Harshit Rana,Akash Deep,Mukesh Choudhary,Vijay Shankar,Shahbaz Ahmed,Kuldeep Sen,Chetan Sakariya,
+Siddharth Kaul,Varun Aaron,Shivam Mavi,Amit Mishra,Piyush Chawla,Karn Sharma,Rahul Chahar,Jayant Yadav,Kartik Tyagi,
+Mandeep Singh,Manan Vohra,Ruturaj Gaikwad,Shreyas Gopal,KS Bharat,Srikar Bharat,Sarfaraz Khan,Devdutt Padikkal,
+Yash Dayal,Ramandeep Singh,Rasikh Dar,Abhimanyu Easwaran,Rahul Tewatia,Sai Kishore,Dhruv Shorey,Saurabh Kumar,
+Nitish Rana,Tushar Deshpande,Robin Uthappa,Karun Nair,Suresh Raina,Krishnappa Gowtham,Harbhajan Singh,Rishi Dhawan,
+Shahbaz Nadeem,Dhawal Kulkarni,Saurabh Tiwary,Gurkeerat Singh,Pawan Negi,Cheteshwar Pujara,Hanuma Vihari,Parthiv Patel,
+Kuldeep Yadav,Barinder Sran,Stuart Binny,Yusuf Pathan,Irfan Pathan,Ashok Dinda,Mohammed Shami,Ravi Bishnoi,Arshdeep Singh`
+  .split(',').map((x) => x.trim().toLowerCase()));
+// Feed corrections
+const CAPPED_OVERRIDE = { 'ravindra jadeja': true };
 
 const ROLE_MAP = { batsman: 'BAT', bowler: 'BOWL', allrounder: 'AR', wicketkeeper: 'WK' };
 const RET_ROLE = { Batter: 'BAT', Bowler: 'BOWL', 'All-Rounder': 'AR', Allrounder: 'AR', 'All Rounder': 'AR', Wicketkeeper: 'WK' };
@@ -91,13 +115,15 @@ async function main() {
   const players = new Map();
   for (const season of SEASONS) {
     for (const t of TEAMS) {
-      const j = await getJSON(`${BASE}/api/bff/cms/teams/${t.slug}?tab=squad&season=${season}`);
+      let j;
+      try { j = await getJSON(`${BASE}/api/bff/cms/teams/${t.slug}?tab=squad&season=${season}`); } catch { continue; } // team didn't exist yet
       for (const p of j.data.squad.players) {
         const ex = players.get(p.externalId);
         const img = p.imageUrlSet?.small || p.imageUrl;
         if (ex) { ex.seasons.push(season); ex.imgs.push(img); continue; }
         players.set(p.externalId, {
           id: p.externalId,
+          gid: p.playerGid,
           name: p.name,
           role: ROLE_MAP[p.role] || 'BAT',
           country: p.country,
@@ -120,17 +146,71 @@ async function main() {
     for (const r of j.data.players) retained.set(norm(r.displayName), { ...r, code: t.code });
   }
 
-  // 3) Rating + base price heuristics
-  const out = [];
+  // 3) IPL career stats per player (cached), used for ratings and the stat line on the card
+  await fs.mkdir(CACHE, { recursive: true });
+  const statsOf = new Map();
+  let fetched = 0;
+  await pool([...players.values()], 8, async (p) => {
+    const f = path.join(CACHE, `${p.gid}.json`);
+    let d;
+    try { if (!FORCE) d = JSON.parse(await fs.readFile(f, 'utf8')); } catch {}
+    if (!d) {
+      try { d = (await getJSON(`${BASE}/api/bff/cms/players/${p.gid}/stats`)).data; } catch { d = null; }
+      if (d) await fs.writeFile(f, JSON.stringify(d));
+      fetched++;
+    }
+    statsOf.set(p.id, d);
+  });
+  console.log(`stats: ${statsOf.size} players (${fetched} fetched, rest cached)`);
+
+  const num = (x) => (Number.isFinite(+x) ? +x : 0);
+  const scored = [];
   for (const p of players.values()) {
+    const st = statsOf.get(p.id);
+    const bat = st?.careerTables?.batting?.rows || [];
+    const bowl = st?.careerTables?.bowling?.rows || [];
+    const car = st?.careerTables?.batting?.career || {};
+    const bcar = st?.careerTables?.bowling?.career || {};
+    // recency-weighted impact: runs scaled by strike rate, wickets scaled by economy
+    let impact = 0;
+    for (const r of bat) {
+      const w = SEASON_WEIGHT[r.season] ?? 0.05;
+      const sr = num(r.strikeRate) || 100;
+      impact += w * num(r.runs) * Math.pow(Math.min(sr, 220) / 135, 1.4);
+    }
+    for (const r of bowl) {
+      const w = SEASON_WEIGHT[r.season] ?? 0.05;
+      const econ = num(r.economy) || 9.5;
+      impact += w * num(r.wickets) * 24 * Math.pow(8.8 / Math.max(econ, 5.5), 1.3);
+    }
+    const matches = num(car.matches) || num(bcar.matches);
+    impact += Math.min(matches, 250) * 0.9 + num(car.runs) * 0.04 + num(bcar.wickets) * 1.2; // pedigree
+    const totals = {
+      m: matches,
+      runs: num(car.runs),
+      sr: num(car.strikeRate),
+      wkts: num(bcar.wickets),
+      econ: num(bcar.wickets) ? num(bcar.economy) : 0,
+    };
+    scored.push({ p, impact, totals });
+  }
+  // impact -> 40..99 by percentile, so the spread stays sensible
+  scored.sort((a, b) => a.impact - b.impact);
+  scored.forEach((x, i) => { x.pct = i / (scored.length - 1); });
+
+  const out = [];
+  for (const { p, pct, totals } of scored) {
     const r = retained.get(norm(p.name));
-    const marquee = MARQUEE.includes(p.name.toLowerCase());
-    const n = p.seasons.length;
-    let rating = 40 + n * 6 + (p.overseas ? 4 : 0) + (p.lastSeason === '2026' ? 6 : 0);
-    if (r) rating = Math.max(rating, 58 + Math.min(r.winningBid, 21) * 1.6);
-    if (marquee) rating = Math.max(rating, 86) + (r ? Math.min(r.winningBid, 21) * 0.4 : 2);
+    const lname = p.name.toLowerCase();
+    const marquee = MARQUEE.includes(lname);
+    let rating = 40 + 57 * Math.pow(pct, 1.5);
+    if (r) rating = Math.max(rating, 62 + Math.min(r.winningBid, 21) * 1.5);
+    if (marquee) rating = Math.max(rating, 86);
+    if (p.seasons[0] === '2021' && !marquee) rating -= 4; // not seen since 2021
     rating = Math.round(Math.min(99, rating));
-    const capped = r ? r.capped : p.overseas || n >= 3 || rating >= 70;
+    let capped = p.overseas || INDIA_CAPPED.has(lname);
+    if (r && !p.overseas) capped = r.capped || capped;
+    if (lname in CAPPED_OVERRIDE) capped = CAPPED_OVERRIDE[lname];
     out.push({
       id: p.id,
       name: p.name,
@@ -140,23 +220,20 @@ async function main() {
       overseas: p.overseas,
       capped,
       age: r?.age ?? null,
-      lastTeam: p.lastTeam,
-      lastSeason: +p.lastSeason,
-      seasons: n,
-      retainedBy: r ? r.code : null,
-      retainedFee: r ? r.winningBid : null,
+      seasons: p.seasons.length,
+      ...totals,
       rating,
       _imgs: p.imgs,
     });
   }
   out.sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name));
   // Base price by rank (lakhs), like the real auction's price bands
-  const BANDS = [[30, 200], [55, 150], [110, 100], [180, 75], [300, 50]];
+  const BANDS = [[30, 200], [60, 150], [120, 100], [200, 75], [320, 50]];
   out.forEach((p, i) => {
     const band = BANDS.find(([upto]) => i < upto);
     p.base = band ? band[1] : 30;
-    if (!p.capped) p.base = Math.min(p.base, i < 120 ? 75 : 30);
-    p.marquee = i < 30;
+    if (!p.capped) p.base = Math.min(p.base, i < 100 ? 50 : 30);
+    p.marquee = i < 30 && p.capped;
   });
 
   // 4) Photos

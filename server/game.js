@@ -18,13 +18,14 @@ export const DEFAULT_SETTINGS = {
 export const POOL_SIZES = { blitz: 60, quick: 120, standard: 220, full: Infinity };
 const MIN_BASE = 30;
 const RESULT_PAUSE_MS = 3200;
-const BOT_NAMES = ['Bot Dhoni', 'Bot Ponting', 'Bot Fleming', 'Bot Nehra', 'Bot Gambhir', 'Bot Kumble', 'Bot Vettori', 'Bot Sangakkara', 'Bot Warne', 'Bot Jayawardene'];
+const BOT_NAMES = 'ABCDEFGHIJ'.split('').map((l) => `Computer ${l}`);
 
 export function increment(bid) {
   if (bid < 100) return 5;
   if (bid < 200) return 10;
   if (bid < 500) return 20;
-  return 25;
+  if (bid < 1000) return 25;
+  return 50; // above ₹10 Cr the steps get bigger so star wars don't drag
 }
 
 // Deterministic per-room randomness so bots/sets don't need extra state
@@ -51,10 +52,16 @@ const ROLE_SET = { BAT: 'Batters', AR: 'All-Rounders', WK: 'Wicket-Keepers', BOW
 export function buildQueue(settings, numTeams, seed) {
   const rnd = mulberry32(seed);
   const want = Math.min(PLAYERS.length, Math.max(POOL_SIZES[settings.pool] ?? 120, numTeams * (settings.minSquad + 5)));
-  // Top ~65% by rating + a random mix of the rest so squads can be filled with bargains
-  const sorted = [...PLAYERS].sort((a, b) => b.rating - a.rating);
-  const top = Math.round(want * 0.65);
-  const pool = [...sorted.slice(0, top), ...shuffle(sorted.slice(top), rnd).slice(0, want - top)];
+  // ~72% capped / ~28% uncapped. Within each, the best 70% by rating plus a random mix of the rest
+  const pick = (list, n) => {
+    const sorted = [...list].sort((a, b) => b.rating - a.rating);
+    const top = Math.round(n * 0.7);
+    return [...sorted.slice(0, top), ...shuffle(sorted.slice(top), rnd).slice(0, n - top)];
+  };
+  const capped = PLAYERS.filter((p) => p.capped);
+  const uncapped = PLAYERS.filter((p) => !p.capped);
+  const nUn = Math.min(uncapped.length, Math.round(want * 0.28));
+  const pool = [...pick(capped, Math.min(capped.length, want - nUn)), ...pick(uncapped, nUn)];
   const sets = [];
   const marquee = shuffle(pool.filter((p) => p.marquee), rnd);
   for (let i = 0; i < marquee.length; i += 10) sets.push({ name: `Marquee Set ${i / 10 + 1}`, ids: marquee.slice(i, i + 10) });
@@ -160,7 +167,7 @@ export class Room {
     const m = this.members.get(id);
     if (!m || id === this.hostId) return;
     if (this.phase === 'lobby') this.members.delete(id);
-    else if (m.bot) throw new Error('Cannot remove a bot mid-auction');
+    else if (m.bot) throw new Error('Cannot remove a computer player mid-auction');
   }
 
   updateSettings(byId, patch) {
@@ -186,7 +193,7 @@ export class Room {
     this.assertHost(byId);
     if (this.phase !== 'lobby') throw new Error('Already started');
     const owners = [...this.members.values()].filter((m) => m.team);
-    if (owners.length < 2) throw new Error('Need at least 2 teams (add a bot or invite a friend)');
+    if (owners.length < 2) throw new Error('Need at least 2 teams (add a computer player or invite a friend)');
     for (const m of [...this.members.values()]) if (!m.team && !m.bot) m.team = null; // spectators allowed
     this.teams = {};
     for (const m of owners) this.teams[m.team] = { code: m.team, ownerId: m.id, purse: this.settings.purse, squad: [] };
@@ -376,7 +383,7 @@ export class Room {
       if (!this.botPlans[key]) {
         const wants = next <= this.botValuation(team, p);
         // bots wait a human-ish delay, never within the last ~0.6s for fairness
-        const delay = 450 + this.rnd() * Math.min(1700, (lot.endsAt - now) * 0.5);
+        const delay = 300 + this.rnd() * Math.min(1000, (lot.endsAt - now) * 0.5);
         this.botPlans[key] = { at: now + delay, wants };
       }
       const plan = this.botPlans[key];
@@ -390,8 +397,8 @@ export class Room {
       // jump-bid when the price is far below what the bot is willing to pay
       const val = this.botValuation(team, p);
       let amount = next;
-      if (val > next * 1.8 && this.rnd() < 0.7) {
-        const jump = Math.min(500, Math.floor(((val - next) * 0.4) / 25) * 25);
+      if (val > next * 1.5 && this.rnd() < 0.85) {
+        const jump = Math.min(500, Math.floor(((val - next) * 0.5) / 25) * 25);
         if (jump >= 25 && !this.bidBlocker(team, next + jump)) amount = next + jump;
       }
       try { this.placeBid(m.id, amount, now); return true; } catch { /* lost race */ }

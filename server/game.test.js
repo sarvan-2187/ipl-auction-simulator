@@ -6,7 +6,8 @@ test('increments follow IPL slabs', () => {
   assert.equal(increment(30), 5);
   assert.equal(increment(150), 10);
   assert.equal(increment(300), 20);
-  assert.equal(increment(1200), 25);
+  assert.equal(increment(700), 25);
+  assert.equal(increment(1200), 50);
 });
 
 test('queue starts with marquee players and has no duplicates', () => {

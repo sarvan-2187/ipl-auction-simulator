@@ -135,7 +135,8 @@ export default function Auction({ room }: { room: RoomState }) {
   const ownerName = (code: string) => room.members.find((m) => m.team === code)?.name || code;
   const total = room.progress.total;
 
-  const stageVars = player ? { ['--pc1' as any]: getTeam(lot?.leader || player.lastTeam)?.primary || '#33407a' } : {};
+  // The card is neutral until someone bids, then it takes the leading franchise's colours
+  const stageVars = player ? { ['--pc1' as any]: getTeam(lot?.leader)?.primary || '#24306a' } : {};
   const leaderTeam = getTeam(lot?.leader);
 
   return (
@@ -196,7 +197,7 @@ export default function Auction({ room }: { room: RoomState }) {
             <div className="stage" style={stageVars}>
               <AnimatePresence mode="popLayout">
                 <motion.div key={lot.id} className="pcard" initial={{ opacity: 0, x: -40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }} transition={{ type: 'spring', stiffness: 160, damping: 22 }}>
-                  <PlayerArt p={player} />
+                  <PlayerArt p={player} leader={lot.leader} />
                 </motion.div>
               </AnimatePresence>
               <div className="panel pinfo">
@@ -293,12 +294,12 @@ function TeamRow({ t, room, owner, onOpen }: { t: TeamState; room: RoomState; ow
   );
 }
 
-function PlayerArt({ p }: { p: Player }) {
+function PlayerArt({ p, leader }: { p: Player; leader: string | null }) {
   const src = playerPhoto(p);
   const [failed, setFailed] = useState(false);
   return (
     <>
-      <img className="pattern" src={teamPattern(p.lastTeam)} alt="" aria-hidden="true" />
+      {leader ? <img key={leader} className="pattern" src={teamPattern(leader)} alt="" aria-hidden="true" /> : <div className="pattern neutral" aria-hidden="true" />}
       <div className="glow" />
       {src && !failed ? (
         <img className={`photo ${p.photo === 'wiki' ? 'wiki' : ''}`} src={src} alt={p.name} onError={() => setFailed(true)} />
@@ -308,7 +309,7 @@ function PlayerArt({ p }: { p: Player }) {
           <div className="initials">{initials(p.name)}</div>
         </>
       )}
-      <img className="lastteam logo" src={`/teams/${p.lastTeam}.svg`} alt={`Last played for ${p.lastTeam}`} title={`Last IPL team: ${p.lastTeam} (${p.lastSeason})`} />
+      {leader && <img className="lastteam logo" src={`/teams/${leader}.svg`} alt={`${leader} leads`} />}
       <div className="rating" title="Auction rating"><div><b>{p.rating}</b><span>RTG</span></div></div>
       {p.marquee && <span className="chip chip-gold marquee-tag">★ Marquee</span>}
       <div className="nameplate only-mobile">
@@ -329,7 +330,6 @@ function PlayerFacts({ p, lot }: { p: Player; lot: Lot }) {
         <span className="chip">{ROLE_LABEL[p.role]}</span>
         <span className={`chip ${p.overseas ? 'chip-os' : ''}`}>{flagEmoji(p.cc)} {p.country}</span>
         <span className="chip">{p.capped ? 'Capped' : 'Uncapped'}</span>
-        {p.retainedBy && <span className="chip chip-green" title={`Retained by ${p.retainedBy} for IPL 2027 at ₹${p.retainedFee} Cr`}>2027: {p.retainedBy}</span>}
       </div>
       <motion.div key={p.id} className="pname display" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         {first && <span className="first">{first}</span>}
@@ -337,8 +337,10 @@ function PlayerFacts({ p, lot }: { p: Player; lot: Lot }) {
       </motion.div>
       <div className="facts">
         <div className="fact"><span>Base price</span><b className="gold">{money(lot.base)}</b></div>
-        <div className="fact"><span>Last IPL</span><b>{p.lastTeam} '{String(p.lastSeason).slice(2)}</b></div>
-        <div className="fact"><span>{p.age ? 'Age' : 'Seasons'}</span><b>{p.age ?? `${p.seasons} recent`}</b></div>
+        <div className="fact"><span>Matches</span><b>{p.m || '—'}</b></div>
+        {p.age ? <div className="fact"><span>Age</span><b>{p.age}</b></div> : <div className="fact"><span>Rating</span><b>{p.rating}</b></div>}
+        <div className="fact"><span>Runs</span><b>{p.runs || '—'}{p.runs ? <small className="dim"> @ {p.sr.toFixed(0)} SR</small> : null}</b></div>
+        <div className="fact" style={{ gridColumn: 'span 2' }}><span>Wickets</span><b>{p.wkts || '—'}{p.wkts ? <small className="dim"> @ {p.econ.toFixed(2)} econ</small> : null}</b></div>
       </div>
     </>
   );
@@ -452,7 +454,7 @@ function SidePanel({ room, tab, setTab, myTeam }: { room: RoomState; tab: 'feed'
         {tab === 'next' && (room.upcoming.length ? room.upcoming.map((id) => {
           const p = getPlayer(id);
           return (
-            <div key={id} className="up-item" style={teamVars(p.lastTeam)}>
+            <div key={id} className="up-item">
               <Face p={p} />
               <div className="grow">
                 <div className="ellipsis" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 16 }}>{p.name}</div>

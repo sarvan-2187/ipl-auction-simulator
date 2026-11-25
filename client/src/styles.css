@@ -358,7 +358,7 @@ img { display: block; }
   .a-grid > .side.left { display: none; }
   .team-strip { display: flex !important; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: none; }
   .team-strip .tcard { min-width: 200px; margin: 6px 0 0; grid-template-columns: 30px 1fr auto; padding: 8px; }
-  .team-strip .tcard img { width: 30px; height: 30px; }
+  .team-strip .tcard img { width: 30px !important; height: 30px !important; }
   .team-strip .tcard .purse { font-size: 18px; text-align: left; }
   .team-strip .tcard .bar { display: none; }
   .stage { grid-template-columns: minmax(0, 1fr); flex: none; }
@@ -418,4 +418,109 @@ img { display: block; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+.pcard .pattern.neutral {
+  background:
+    radial-gradient(circle at 50% 30%, rgba(245, 192, 74, 0.18), transparent 60%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.035) 0 2px, transparent 2px 14px);
+  opacity: 1; mix-blend-mode: normal;
+}
+.fact small { font-size: 12px; font-weight: 600; }
+
+/* ---------- phone landscape: everything on one screen, no scrolling ---------- */
+@media (orientation: landscape) and (max-height: 520px) {
+  .only-mobile { display: none !important; }
+  .only-desktop { display: revert !important; }
+  .auction { height: 100dvh; min-height: 0; overflow: hidden; grid-template-rows: auto minmax(0, 1fr); }
+  .a-top { padding: 6px max(10px, env(safe-area-inset-left)) 4px; gap: 8px; flex-wrap: nowrap; }
+  .a-top .brand-mark { display: none; }
+  .a-top .display { font-size: 18px !important; }
+  .a-top .eyebrow { font-size: 10px !important; }
+  .a-top .chip { display: inline-flex; height: 26px; font-size: 11px; }
+  .a-top .chip-gold { display: none; }
+  .a-top .btn-sm { height: 30px; padding: 0 10px; font-size: 12px; }
+  .a-top .icon-btn { width: 30px; height: 30px; }
+  .react-bar button { width: 28px; height: 28px; font-size: 15px; border-radius: 8px; }
+  .a-top .react-bar.only-desktop { display: flex !important; }
+  .a-top .btn-sm[title="Close this lot now"] { display: none !important; }
+
+  .a-grid { grid-template-columns: minmax(0, 1fr); padding: 0 max(8px, env(safe-area-inset-right)) 6px max(8px, env(safe-area-inset-left)); gap: 6px; }
+  .a-grid > .side.left, .a-grid > .side.right { display: none !important; }
+  .center { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: 6px; min-width: 0; min-height: 0; }
+  .team-strip { display: flex !important; gap: 6px; overflow-x: auto; padding: 0; scrollbar-width: none; }
+  .team-strip .tcard { min-width: 168px; margin: 6px 0 0; grid-template-columns: 26px 1fr auto; gap: 6px; padding: 4px 8px; border-radius: 10px; }
+  .team-strip .tcard img { width: 26px !important; height: 26px !important; }
+  .team-strip .tcard .owner { font-size: 13px; }
+  .team-strip .tcard .meta { font-size: 11px; }
+  .team-strip .tcard .purse { font-size: 17px; }
+  .team-strip .tcard .bar { display: none; }
+  .team-strip .tcard.me::after { top: -7px; font-size: 9px; }
+
+  .stage { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); flex: none; min-height: 0; }
+  .pcard { height: auto; min-height: 0; border-radius: 14px 0 0 14px; }
+  .pcard .nameplate { display: block !important; position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 12px 8px; background: linear-gradient(0deg, rgba(4, 6, 16, 0.92), transparent); }
+  .pcard .nameplate .display { font-size: 26px; }
+  .pcard .nameplate .np-sub { font-family: var(--font-ui); font-weight: 700; font-size: 12px; color: var(--text-2); }
+  .pcard .lastteam { width: 34px; height: 34px; top: 8px; left: 8px; }
+  .pcard .rating { width: 44px; height: 44px; top: 8px; right: 8px; border-radius: 12px; }
+  .pcard .rating b { font-size: 22px; }
+  .pcard .rating span { font-size: 8px; }
+  .pcard .marquee-tag { top: 8px; left: 50%; transform: translateX(-50%); bottom: auto; height: 20px; font-size: 10px; }
+  .pcard .photo { height: 96%; }
+  .pcard .initials { font-size: 70px; }
+
+  .pinfo { padding: 8px 10px; gap: 6px; border-radius: 0 14px 14px 0; overflow-y: auto; }
+  .pinfo .pname, .pinfo .race { display: none !important; }
+  .pinfo > .row:not(.bidbox .row) { display: none !important; }
+  .pinfo .chip { height: 22px; font-size: 11px; padding: 0 8px; }
+  .bidbox { order: -1; margin-top: 0; padding: 8px 12px; border-radius: 12px; }
+  .bidbox .eyebrow { display: none; }
+  .bidbox .amount { font-size: 38px; }
+  .bidbox .leader { min-height: 30px; margin-top: 2px !important; }
+  .bidbox .leader img { width: 30px !important; height: 30px !important; }
+  .bidbox .leader b { font-size: 20px; }
+  .bidbox .leader .muted { display: none; }
+  .fact span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bidbox .going { font-size: 16px; }
+  .bidbox .row .chip { height: 20px; font-size: 10px; }
+  .timer { height: 7px; margin-top: 6px; }
+  .timer-num { font-size: 30px; }
+  .facts { grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .facts .fact { padding: 5px 7px; border-radius: 8px; grid-column: auto !important; }
+  .fact span { font-size: 9px; letter-spacing: 0.08em; }
+  .fact b { font-size: 13px; }
+  .fact small { display: none; }
+
+  .controls { position: static; grid-template-columns: 84px minmax(0, 1fr) 84px; gap: 6px; padding: 6px; border-radius: 14px; background: var(--panel); }
+  .bid-btn { height: 50px; font-size: 26px; border-radius: 14px; }
+  .bid-btn small { display: none; }
+  .pass-btn { min-width: 0; height: 50px; padding: 0 6px; font-size: 14px; }
+  .jump { gap: 4px; }
+  .jump button { height: auto; font-size: 11px; padding: 0 4px; }
+  .stamp .word { font-size: 64px; }
+  .stamp .to { font-size: 22px; }
+  .stamp .to img { width: 36px; height: 36px; }
+  .floater { bottom: 60px; }
+
+  /* lobby + home */
+  .home { padding: 16px; }
+  .home-inner { grid-template-columns: 1fr 1fr; gap: 20px; }
+  .hero-title { font-size: 52px; margin: 10px 0 6px; }
+  .hero-sub { font-size: 14px; }
+  .logo-wall { display: none; }
+  .stat-strip { margin-top: 10px; }
+  .home-card { padding: 16px; }
+  .lobby-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 12px; }
+  .team-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .team-tile { min-height: 108px; padding: 8px 4px; border-radius: 12px; }
+  .team-tile img { width: 42px; height: 42px; }
+  .team-tile .tname { font-size: 18px; }
+  .team-tile .owner { font-size: 11px; padding: 1px 6px; }
+  .team-tile .bot-add { top: 3px; right: 3px; font-size: 9px; padding: 2px 4px; }
+  .topbar { margin-bottom: 10px; flex-wrap: nowrap; }
+  .topbar .display { font-size: 24px !important; }
+  .room-code { width: auto; }
+  .room-code .code { font-size: 22px; }
+  .drawer { width: min(460px, 70vw); }
 }

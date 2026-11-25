@@ -48,7 +48,7 @@ export function initials(name: string) {
 export function Face({ p, className = 'face' }: { p: Player; className?: string }) {
   const src = playerPhoto(p);
   return (
-    <div className={className} style={teamVars(p.lastTeam)}>
+    <div className={className}>
       {src ? <img src={src} alt="" loading="lazy" /> : <div style={{ display: 'grid', placeItems: 'center', height: '100%', fontFamily: 'var(--font-display)', fontSize: 18 }}>{initials(p.name)}</div>}
     </div>
   );

@@ -47,7 +47,8 @@ export function increment(bid: number) {
   if (bid < 100) return 5;
   if (bid < 200) return 10;
   if (bid < 500) return 20;
-  return 25;
+  if (bid < 1000) return 25;
+  return 50;
 }
 
 // Team strength: average rating of best XI (max 4 overseas) – a fun post-auction score

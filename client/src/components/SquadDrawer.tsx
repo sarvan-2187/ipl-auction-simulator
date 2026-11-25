@@ -28,7 +28,7 @@ export default function SquadDrawer({ room, code, onClose }: { room: RoomState; 
           <TeamLogo code={code} size={64} />
           <div className="grow">
             <div className="display" style={{ fontSize: 30 }}>{info.name}</div>
-            <div className="muted" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700 }}>{owner?.bot ? '🤖 ' : ''}{owner?.name}</div>
+            <div className="muted" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700 }}>{owner?.name}{owner?.bot ? ' · computer' : ''}</div>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
         </div>

@@ -9,11 +9,12 @@ export interface Player {
   overseas: boolean;
   capped: boolean;
   age: number | null;
-  lastTeam: string;
-  lastSeason: number;
   seasons: number;
-  retainedBy: string | null;
-  retainedFee: number | null;
+  m: number;
+  runs: number;
+  sr: number;
+  wkts: number;
+  econ: number;
   marquee: boolean;
   rating: number;
   base: number;

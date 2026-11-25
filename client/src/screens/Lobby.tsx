@@ -80,7 +80,7 @@ export default function Lobby({ room }: { room: RoomState }) {
                   <TeamLogo code={t.code} size={74} />
                   <div className="tname">{t.code}</div>
                   <div className={`owner ellipsis ${owner ? '' : 'open'}`}>
-                    {owner ? `${owner.bot ? '🤖 ' : ''}${owner.name}${mine ? ' (you)' : ''}` : 'Tap to pick'}
+                    {owner ? `${owner.name}${mine ? ' (you)' : ''}` : 'Tap to pick'}
                   </div>
                   {isHost && !owner && (
                     <span
@@ -90,7 +90,7 @@ export default function Lobby({ room }: { room: RoomState }) {
                       onClick={(e) => { e.stopPropagation(); act('addBot', { team: t.code }); }}
                       onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); act('addBot', { team: t.code }); } }}
                     >
-                      + BOT
+                      + CPU
                     </span>
                   )}
                 </motion.button>
@@ -154,9 +154,9 @@ export default function Lobby({ room }: { room: RoomState }) {
                   <div className="avatar">{m.team ? <TeamLogo code={m.team} size={26} /> : m.name[0]?.toUpperCase()}</div>
                   <div className="grow">
                     <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 16 }} className="ellipsis">
-                      {m.bot ? '🤖 ' : ''}{m.name}{m.id === memberId ? ' (you)' : ''}
+                      {m.name}{m.id === memberId ? ' (you)' : ''}
                     </div>
-                    <div className="dim" style={{ fontSize: 12 }}>{m.id === room.hostId ? 'Host · ' : ''}{m.team ? `Bidding as ${m.team}` : 'Spectating'}</div>
+                    <div className="dim" style={{ fontSize: 12 }}>{m.id === room.hostId ? 'Host · ' : ''}{m.bot ? 'Computer player · ' : ''}{m.team ? `Bidding as ${m.team}` : 'Spectating'}</div>
                   </div>
                   <span className={`dot ${m.connected ? '' : 'off'}`} title={m.connected ? 'Online' : 'Offline'} />
                   {isHost && m.id !== memberId && (
@@ -175,8 +175,8 @@ export default function Lobby({ room }: { room: RoomState }) {
                 </button>
                 <p className="dim" style={{ fontSize: 13, margin: '10px 0 0', lineHeight: 1.5 }}>
                   {owners.length < 2
-                    ? 'Need at least 2 teams. Invite friends, or tap “+ BOT” on a franchise to fill it with an AI bidder.'
-                    : `${owners.length} teams ready. Unclaimed franchises won't take part. Add bots to make it spicier.`}
+                    ? 'Need at least 2 teams. Invite friends, or tap “+ CPU” on a franchise to add a computer player (Computer A, B…).'
+                    : `${owners.length} teams ready. Unclaimed franchises won't take part. Add computer players to make it spicier.`}
                 </p>
               </>
             ) : (
