@@ -1,94 +1,220 @@
-# IPL Auction Room 🏏🔨
+<p align="center">
+  <img src="docs/images/banner.jpg" alt="The IPL Auction Room" width="100%" />
+</p>
 
-A real-time multiplayer IPL auction game for friends. Create a room, share the 5-letter code, everyone picks a franchise (CSK, MI, RCB, KKR, DC, PBKS, RR, SRH, GT, LSG), and you fight it out live with a hammer clock, purses, overseas caps and squad limits.
+<p align="center">
+  <strong>A real-time, multiplayer IPL auction for friends.</strong><br />
+  Create a room, share the code, pick a franchise and fight for every player live, then build and share your Playing XI.
+</p>
 
-- **511 players** from every IPL squad 2021–2026 (313 capped, 198 uncapped), 460 with official cut-out photos
-- Ratings and base prices built from real IPL career stats (runs, strike rate, wickets, economy), weighted towards recent seasons
-- A clean-slate auction: player cards never show a player's real franchise. The card only takes on a team's colours when that team leads the bidding
-- **Real team logos, colours and names**
-- **Room codes + invite links**, works on phones and laptops, survives refreshes and reconnects
-- **Computer players** (Computer A, Computer B, …) fill empty franchises when the host taps `+ CPU`
-- Works in phone portrait and landscape (landscape fits the whole auction on one screen)
-- Marquee sets → role sets → uncapped sets, with an optional **accelerated round** for unsold players
-- Jump bids (+50L / +1 Cr), Pass, keyboard shortcuts (Space = bid, P = pass) and synthesized sounds
-- The hammer moment: gavel slam and stage shake, an official auction ticket flips up with the price counting up, then an ink-textured rubber stamp (SOLD / UNSOLD) slams onto it with splatter, light rays, confetti and crowd noise. Record buy / Steal / Bidding war tags, and a gold "Welcome to …" banner when you're the buyer
-- Results screen: best-XI strength ranking, most expensive buy, steal of the auction, a "copy squads for WhatsApp" button, and **Play again** (host restarts in the same room with the same friends and franchise picks)
+<p align="center">
+  <a href="https://ipl-auction-bbho.onrender.com"><strong>Play now: ipl-auction-bbho.onrender.com</strong></a>
+</p>
 
-## Play locally
+<p align="center">
+  <img alt="Node 20+" src="https://img.shields.io/badge/node-%3E%3D20-111?style=flat-square" />
+  <img alt="React 18" src="https://img.shields.io/badge/react-18-111?style=flat-square" />
+  <img alt="Socket.IO" src="https://img.shields.io/badge/realtime-socket.io-111?style=flat-square" />
+  <img alt="Players" src="https://img.shields.io/badge/players-511-f5c04a?style=flat-square" />
+  <img alt="Franchises" src="https://img.shields.io/badge/franchises-10-f5c04a?style=flat-square" />
+</p>
+
+---
+
+## Contents
+
+- [Overview](#overview)
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [How a game works](#how-a-game-works)
+- [Rules](#rules)
+- [Player ratings](#player-ratings)
+- [Getting started](#getting-started)
+- [Deployment](#deployment)
+- [Refreshing player data](#refreshing-player-data)
+- [Project structure](#project-structure)
+- [Credits](#credits)
+- [Disclaimer](#disclaimer)
+
+## Overview
+
+The IPL Auction Room recreates the tension of the IPL auction table for a group of friends. One person hosts, everyone else joins with a five-letter room code, and each player takes one of the ten franchises. Players come up in sets, the clock resets on every bid, and the hammer falls when the clock runs out. Empty franchises can be handed to computer players, so a full ten-team auction works even with two people.
+
+When the auction ends, every owner arranges a Playing XI on a cricket ground, gets suggestions to improve it, locks it in and shares the result as an image.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/home.jpg" alt="Home screen" /><br /><sub><b>Home.</b> Create a room or join one with a code.</sub></td>
+    <td width="50%"><img src="docs/images/lobby.jpg" alt="Lobby" /><br /><sub><b>Lobby.</b> Pick a franchise, add computer players, set the format and squad rules.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/auction.jpg" alt="Live auction" /><br /><sub><b>Live auction.</b> Player card with stats and role ratings, live bid, clock and teams still in the race.</sub></td>
+    <td width="50%"><img src="docs/images/sold.jpg" alt="Sold ceremony" /><br /><sub><b>The hammer.</b> Gavel, auction ticket and an ink-stamped SOLD.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/playing-xi.jpg" alt="Playing XI builder" /><br /><sub><b>Playing XI.</b> Arrange your side on the ground, switch roles, auto-pick or follow suggestions.</sub></td>
+    <td width="50%"><img src="docs/images/results.jpg" alt="Results" /><br /><sub><b>Results.</b> Teams ranked by Playing XI rating, with awards and squad rules.</sub></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td width="25%"><img src="docs/images/mobile-auction.jpg" alt="Mobile auction" /><br /><sub><b>Phone.</b> Live bid bar above the Bid button.</sub></td>
+    <td width="25%"><img src="docs/images/mobile-xi.jpg" alt="Mobile Playing XI" /><br /><sub><b>Phone.</b> Playing XI on the ground.</sub></td>
+    <td width="25%"><img src="docs/images/share-card.jpg" alt="Playing XI share card" /><br /><sub><b>Share card.</b> Your Playing XI as an image.</sub></td>
+    <td width="25%"><img src="docs/images/squad-card.jpg" alt="Full squad share card" /><br /><sub><b>Share card.</b> Your full squad as an image.</sub></td>
+  </tr>
+</table>
+
+## Features
+
+**Rooms and players**
+- Five-letter room codes and invite links; works on phones, tablets and laptops.
+- All ten franchises with their names, colours and logos.
+- Computer players (Computer A, Computer B and so on) fill any empty franchise and bid sensibly for the roles they need.
+- Refreshing or dropping connection puts you straight back in your seat. Leaving a lobby frees your franchise; if the host leaves, hosting passes on.
+
+**The auction**
+- 511 players from every IPL squad between 2021 and 2026, 460 with official cut-out photos.
+- Marquee sets first, then capped and uncapped sets by role, plus an optional accelerated round for unsold players.
+- A seven-second clock that resets on every bid; Pass to drop out of a lot early.
+- Jump bids (+50 L, +1 Cr), keyboard shortcuts (Space or Enter to bid, P to pass).
+- Live race strip showing who is leading, who passed and who can no longer afford the player.
+- A sold ceremony: gavel, auction ticket, ink-textured stamp, light rays and crowd sound, with tags for record buys, steals and bidding wars.
+- On phones, a live bar above the Bid button flashes on every rival bid and turns red when you are outbid.
+- Works in portrait and landscape on phones, with a compact layout for short laptop screens.
+
+**After the auction**
+- Playing XI builder on a top-down cricket ground with player heads by role and an animated XI rating.
+- Auto-pick, one-tap swap suggestions with the rating gain, role switching and a bench.
+- Lock your XI; computer teams lock theirs automatically and the final standings rank teams by XI rating.
+- Share your Playing XI or your full squad as a 1080 x 1350 image, ready for Instagram or WhatsApp.
+- Copy every squad as text for a group chat, and play again in the same room with the same friends.
+
+## How a game works
+
+1. **Create a room.** The host enters a name and creates a room. The room code appears at the top of the lobby.
+2. **Invite friends.** Share the code or the invite link. Everyone picks a franchise; the host can fill the rest with computer players.
+3. **Choose a format.** Blitz (about 20 minutes), Quick (about 45), Classic (about 90) or Mega (all players). The host can also change the purse, squad size, overseas limit, bid clock and squad rules.
+4. **Bid.** Players come up one by one. Bid, jump bid or pass. When the clock runs out, the highest bidder wins the player.
+5. **Pick your Playing XI.** Arrange eleven players on the ground, follow the suggestions or auto-pick, then lock it in.
+6. **Compare and share.** The results screen ranks every team, highlights the biggest buys, and lets you share your XI or squad.
+
+## Rules
+
+| Rule | Default | Notes |
+|------|---------|-------|
+| Purse | ₹120 Cr | Adjustable by the host. |
+| Squad size | 15 to 20 | Depends on the format; the maximum is a hard cap. |
+| Overseas players | 8 per squad, 4 in the Playing XI | Hard caps. |
+| Squad rules | 3 batters, 4 bowlers, 2 all-rounders, 2 wicket-keepers | Adjustable. The server blocks any bid that would make them impossible to meet. |
+| Purse reserve | 30 L per player you still have to buy | You can't spend money needed to complete your squad. The Bid button says how much to keep and why. |
+| Bid increments | 5 L below 1 Cr, 10 L to 2 Cr, 20 L to 5 Cr, 25 L to 10 Cr, 50 L above | Jump bids are limited to +5 Cr. |
+| Bid clock | 7 seconds | The first bid on each player gets 3 extra seconds. |
+| Playing XI | 11 players, at least 1 keeper and 5 bowling options | Missing keeper or bowling options lowers the XI rating. |
+
+## Player ratings
+
+Every player has four ratings, one for each role. They are built from IPL statistics on iplt20.com, with the most recent two seasons weighted most heavily.
+
+| Rating | Built from |
+|--------|-----------|
+| Batting | Runs, strike rate and average |
+| Bowling | Wickets, economy and bowling strike rate |
+| All-rounder | A blend of batting and bowling, rewarded when a player is strong at both |
+| Wicket-keeping | Batting plus a small bonus for catches and stumpings (keepers only) |
+
+The headline rating is the player's main role. The best 62 players are spread evenly between 90 and 99, and everyone else is capped at 89. Marquee and retained players receive a small boost. Owners can move a bought player into any role he is eligible for, and his rating follows that role.
+
+Manual adjustments live in `RATING_OVERRIDE` in `scripts/ratings.mjs` (currently Hardik Pandya 96 and Andre Russell 95).
+
+## Getting started
+
+Requirements: Node.js 20 or newer.
 
 ```bash
-npm install        # installs server + client
-npm run build      # builds the game UI
+git clone https://github.com/sarvan-2187/ipl-auction-simulator.git
+cd ipl-auction-simulator
+npm install        # installs the server and the client
+npm run build      # builds the client
 npm start          # http://localhost:3001
 ```
 
-Friends on the same Wi-Fi can open `http://<your-laptop-ip>:3001`.
+Friends on the same Wi-Fi can join at `http://<your-computer-ip>:3001`.
 
-For development with hot reload: `npm run dev` (UI on http://localhost:5173).
+For development with hot reload:
 
-## Play with friends over the internet
-
-The server keeps rooms in memory, so it needs a host that runs a Node process with WebSockets:
-
-- **Render**: push this repo, then *New → Blueprint* and pick the repo (uses `render.yaml`). Free plan works, but it sleeps after ~15 min idle and a restart wipes any room in progress, so open the site a minute before you play.
-- **Railway / Fly.io / any VPS**: build with `npm install && npm run build`, start with `npm start`. `PORT` is respected.
-- **From your own laptop**: run `npm start`, then expose it with `cloudflared tunnel --url http://localhost:3001` or `ngrok http 3001` and share the URL.
-
-### Keep it awake with UptimeRobot
-
-`GET /api/health` (also answers `HEAD`) returns:
-
-```json
-{"status":"ok","service":"ipl-auction","uptimeSeconds":5321,"rooms":1,"liveAuctions":1,"playersOnline":4,"version":"520cf0f","time":"…"}
+```bash
+npm run dev        # client on http://localhost:5173, server on :3001
+npm test           # auction engine, squad rules and Playing XI tests
 ```
 
-In UptimeRobot: **Add New Monitor → HTTP(s)** (or **Keyword**, looking for `"status":"ok"`), URL `https://<your-app>.onrender.com/api/health`, interval **5 minutes**. That stops Render's free plan from sleeping. One service pinged 24/7 uses about 744 of the 750 free instance hours a month.
+## Deployment
 
-## Formats (host picks in the lobby)
+The server keeps rooms in memory and needs a host that runs a long-lived Node process with WebSockets. Serverless platforms such as Vercel are not suitable.
 
-| Preset  | Players in pool | Squad (min–max) | Rough length with 4–5 friends |
-|---------|-----------------|-----------------|-------------------------------|
-| Blitz   | 60+             | 11–15           | ~20 min |
-| Quick   | 120             | 15–20           | ~45 min |
-| Classic | 220             | 18–25           | ~1.5 hr |
-| Mega    | all 511         | 18–25           | 2 hr+ |
+**Render (recommended).** The repository includes a `render.yaml` blueprint.
 
-The pool is automatically enlarged if there are many teams. Purse (default ₹120 Cr), overseas limit, bid clock and squad sizes are all adjustable.
+1. Sign in to Render with GitHub.
+2. Choose **New, Blueprint** and select this repository.
+3. Apply. The first build takes a few minutes.
 
-**Squad rules:** every squad must reach at least 3 batters, 4 bowlers, 2 all-rounders and 2 wicket-keepers (the host can change these). The server blocks any bid that would make the rules impossible to meet with the slots you have left, and the Bid button tells you what you still need. Each auction's player pool guarantees enough of every role.
+On the free plan the service sleeps after about 15 minutes without traffic. The game pings the server every few minutes while you are in a room, and `GET /api/health` can be used with an uptime monitor such as UptimeRobot to keep it awake. A restart or redeploy ends any auction in progress.
 
-**Role ratings:** every player has a Batting, Bowling, All-rounder and (for keepers) Wicket-keeping rating, built from IPL stats with recent seasons weighted most: runs, strike rate and average for batting; wickets, economy and strike rate for bowling. The headline rating is his main role. After you buy a player you can switch him between the roles he's eligible for in your squad view, and his rating, your role counts and your Best-XI strength update to match.
+`GET /api/health` returns:
 
-**Rules enforced by the server:** IPL bid increments (5L under 1 Cr, 10L to 2 Cr, 20L to 5 Cr, 25L to 10 Cr, 50L above), you can't outbid yourself, you can't exceed the squad or overseas cap, and you must keep enough purse (30L per remaining slot) to reach the minimum squad.
+```json
+{ "status": "ok", "service": "ipl-auction", "uptimeSeconds": 5321, "rooms": 1, "liveAuctions": 1, "playersOnline": 4, "version": "1a46efe", "time": "..." }
+```
 
 ## Refreshing player data
 
 ```bash
-npm run fetch-data          # re-pulls squads, retentions, photos and logos from iplt20.com
-npm run fetch-data -- --force   # re-download every image
-npm run rerate                  # recalculate ratings offline from the cached stats (no downloads, under a second)
+npm run fetch-data              # re-download squads, retentions, stats, photos and logos
+npm run fetch-data -- --force   # also re-download every image
+npm run rerate                  # recalculate ratings offline from cached stats (no downloads)
 ```
 
-Manual ratings live in `RATING_OVERRIDE` in `scripts/ratings.mjs` (currently Hardik Pandya 96, Andre Russell 95). The best 62 players are spread evenly from 99 to 90 (`ELITE`), and everyone else is capped at 89.
+`fetch-data` reads the public squad pages and player statistics on iplt20.com for seasons 2021 to 2026, plus the IPL 2027 retention list, which is used for capped status, age and a small rating boost. Statistics are cached in `scripts/.cache`, so `rerate` can rebuild every rating in under a second.
 
-The script reads the public squad feeds behind iplt20.com team pages (seasons 2021–2026), each player's IPL career stats, and the IPL 2027 retention list (used only for capped status, age and as a rating floor). It also tries Wikipedia for players with no official photo. Stats are cached in `scripts/.cache`.
-
-Ratings come from IPL stats with recent seasons weighted most, plus a hand-picked marquee list. Capped status comes from the retention feed and a hand-maintained `INDIA_CAPPED` list; every overseas player counts as capped. Edit `MARQUEE`, `INDIA_CAPPED` or the `BANDS` table in `scripts/fetch-data.mjs` to taste. The pool for each game is about 72% capped and 28% uncapped, so every auction has uncapped sets.
-
-## Project layout
+## Project structure
 
 ```
-server/game.js         auction engine (rules, timer, computer players) – pure logic, unit tested
-server/index.js        Express + Socket.IO, rooms, reconnects
-server/game.test.js    `npm test`: rules + a full computer-only auction simulation
-client/src/screens     Home, Lobby, Auction, Results
-client/public/players  player photos (.webp cut-outs, a few .jpg)
-client/public/teams    franchise logos and backdrop patterns
-scripts/fetch-data.mjs data + image scraper
+server/
+  index.js            Express and Socket.IO server, rooms, reconnects, health endpoint
+  game.js             Auction engine: sets, bidding, clock, squad rules, computer players
+  xi.js               Playing XI rating, validation and auto-pick
+  game.test.js        Engine tests, including a full computer-only auction
+client/src/
+  screens/            Home, Lobby, Auction, Results
+  components/         Sold ceremony, Playing XI builder, squad drawer, squad rules
+  lib/                Data, sockets, sounds, Playing XI logic, share-card renderer
+client/public/
+  players/            Player photos
+  teams/              Franchise logos and patterns
+  fonts/              Geist and NType 82, with credits
+  flags/              Country flags
+scripts/
+  fetch-data.mjs      Squad, stats and photo scraper
+  ratings.mjs         Rating engine shared by fetch-data and rerate
+  rerate.mjs          Offline rating rebuild
+docs/images/          README banner and screenshots
 ```
 
 ## Credits
 
-**Type:** [Geist](https://vercel.com/font) by Vercel (SIL OFL) for the whole interface, with **NType 82** by [Nothing](https://nothing.tech) as the serif accent on first names. Flags are from [flag-icons](https://github.com/lipis/flag-icons) (MIT). See `client/public/fonts/CREDITS.md`.
+- **Typography:** [Geist](https://vercel.com/font) by Vercel (SIL Open Font License) for the interface, and NType 82 by [Nothing](https://nothing.tech) for player names. Font files and licences are in `client/public/fonts`.
+- **Flags:** [flag-icons](https://github.com/lipis/flag-icons) by Panayiotis Lipiridis (MIT). The West Indies flag is a custom drawing.
+- **Data:** squads, statistics and player photos from the public pages of [iplt20.com](https://www.iplt20.com).
+- **Built with:** React, Vite, Framer Motion, Express and Socket.IO.
 
-Team names, logos and player photos belong to their owners (BCCI/IPL and the franchises). This repo is a private, non-commercial game for friends.
+## Disclaimer
+
+- **Fan-made and non-commercial.** This is a private game made for friends. It is not affiliated with, endorsed by or sponsored by the Indian Premier League, the Board of Control for Cricket in India or any IPL franchise.
+- **Names, logos and photos.** Team names, logos, player names and player photos are the property of their respective owners and are used here for identification only. No ownership is claimed.
+- **Ratings and prices.** Player ratings, base prices and computer bidding are estimates derived from public statistics. They are not official valuations and say nothing about any player's real auction value.
+- **No real money.** All purses, bids and prices are virtual. The game involves no betting, payments or prizes of any kind.
+- **Fonts.** NType 82 is a proprietary typeface by Nothing and is used only in this private, non-commercial project.
+- **Takedown.** If you own any of the material used here and would like it removed, please open an issue and it will be taken down.
