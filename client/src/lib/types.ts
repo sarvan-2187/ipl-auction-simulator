@@ -47,6 +47,8 @@ export interface TeamState {
   ownerId: string;
   purse: number;
   squad: { id: number; price: number; role?: Role }[];
+  xi?: number[] | null;
+  xiLocked?: boolean;
 }
 
 export interface Lot {

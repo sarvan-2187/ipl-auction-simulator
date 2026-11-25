@@ -108,7 +108,6 @@ export default function Auction({ room }: { room: RoomState }) {
           sfx.bid();
           const outbid = !!myTeam && p.leader === myTeam.code;
           if (last) setFlash({ key: Date.now(), team: last.team, amount: last.amount, outbid });
-          if (outbid) { try { navigator.vibrate?.([40, 60, 40]); } catch {} }
         }
       }
     }

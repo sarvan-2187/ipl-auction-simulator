@@ -1,6 +1,7 @@
 // Auction engine. Pure state + rules; socket wiring lives in index.js.
 // All money values are in lakhs (100 lakhs = 1 crore).
 import { readFileSync } from 'node:fs';
+import { autoXI, xiInfo, XI_SIZE, MAX_OS } from './xi.js';
 
 export const PLAYERS = JSON.parse(readFileSync(new URL('./players.json', import.meta.url), 'utf8'));
 export const PLAYER_BY_ID = new Map(PLAYERS.map((p) => [p.id, p]));
@@ -412,7 +413,29 @@ export class Room {
     this.lastActive = now;
   }
 
+  // Playing XI: owners pick 11 from their squad after the auction
+  setXI(memberId, ids, lock = false) {
+    if (this.phase !== 'results') throw new Error('Pick your XI once the auction is over');
+    const m = this.members.get(memberId);
+    const team = m && this.teams[m.team];
+    if (!team) throw new Error('You have no squad');
+    const own = new Set(team.squad.map((x) => x.id));
+    const clean = [...new Set((ids || []).map(Number))].filter((id) => own.has(id));
+    if (clean.length > XI_SIZE) throw new Error(`Pick only ${XI_SIZE}`);
+    const info = xiInfo(clean, team.squad, PLAYER_BY_ID);
+    if (info.os > MAX_OS) throw new Error(`Max ${MAX_OS} overseas in the XI`);
+    if (lock && clean.length < Math.min(XI_SIZE, team.squad.length)) throw new Error(`Pick ${Math.min(XI_SIZE, team.squad.length)} players to lock`);
+    team.xi = clean;
+    team.xiLocked = !!lock;
+  }
+
   finish() {
+    // computer teams lock their best XI straight away
+    for (const t of Object.values(this.teams)) {
+      const m = this.members.get(t.ownerId);
+      t.xi = m?.bot ? autoXI(t.squad, PLAYER_BY_ID) : t.xi || null;
+      t.xiLocked = !!m?.bot;
+    }
     this.phase = 'results';
     this.lot = null;
     this.paused = false;

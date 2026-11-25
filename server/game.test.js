@@ -125,3 +125,28 @@ test('user report: 1 Cr left, need 1 AR + 2 WK -> 30L bowler blocked with a clea
   r.lot = { ...r.lot, id: keeper.id };
   assert.equal(r.bidBlocker(team, 30), null);
 });
+
+test('playing XI: auto-pick is legal, bots lock on finish, humans can set and lock', async () => {
+  const { autoXI, xiInfo } = await import('./xi.js');
+  const r = new Room('XI001', 'h');
+  r.join('h', 'Host');
+  for (const c of ['CSK', 'MI', 'RCB']) r.addBot('h', c);
+  r.pickTeam('h', 'KKR');
+  let t = 0; r.start('h', t);
+  while (r.phase === 'auction') r.tick((t += 200));
+  for (const team of Object.values(r.teams)) {
+    const m = r.members.get(team.ownerId);
+    if (m.bot) {
+      assert.equal(team.xiLocked, true);
+      const info = xiInfo(team.xi, team.squad, PLAYER_BY_ID);
+      assert.ok(info.os <= 4 && team.xi.length === Math.min(11, team.squad.length), JSON.stringify(info));
+      console.log(team.code, 'XI rating', info.rating, info.issues.join('; ') || 'valid');
+    }
+  }
+  // give the human a squad and lock an auto XI
+  r.teams.KKR.squad = r.teams.CSK.squad.map((x) => ({ ...x }));
+  const ids = autoXI(r.teams.KKR.squad, PLAYER_BY_ID);
+  r.setXI('h', ids, true);
+  assert.equal(r.teams.KKR.xiLocked, true);
+  assert.throws(() => r.setXI('h', ids.slice(0, 5), true), /Pick 11/);
+});
