@@ -142,13 +142,13 @@ export default function SoldCeremony({ lot, player, mine, roomCode, tags }: { lo
                 <circle cx="110" cy="110" r="102" fill="none" strokeWidth="7" />
                 <circle cx="110" cy="110" r="94" fill="none" strokeWidth="2" />
                 <circle cx="110" cy="110" r="64" fill="none" strokeWidth="2.5" />
-                <text fontFamily="Bebas Neue, sans-serif" fontSize="19" letterSpacing="3.2" stroke="none">
+                <text fontFamily="Lettera Mono, monospace" fontSize="15" fontWeight="500" letterSpacing="1.6" stroke="none">
                   <textPath href={`#ring-${uid}`} startOffset="0">★ {team?.name.toUpperCase()} ★ AUCTION ROOM {roomCode} ★</textPath>
                 </text>
                 <rect x="14" y="86" width="192" height="50" rx="6" stroke="none" />
-                <text x="110" y="128" textAnchor="middle" fontFamily="Bebas Neue, sans-serif" fontSize="50" letterSpacing="6" fill="var(--stamp-knock)" stroke="none">SOLD</text>
-                <text x="110" y="78" textAnchor="middle" fontFamily="Bebas Neue, sans-serif" fontSize="26" stroke="none">{lot.leader}</text>
-                <text x="110" y="162" textAnchor="middle" fontFamily="Bebas Neue, sans-serif" fontSize="22" stroke="none">{money(lot.bid)}</text>
+                <text x="110" y="128" textAnchor="middle" fontFamily="Ndot 57, Rupee Dot, sans-serif" fontSize="50" letterSpacing="6" fill="var(--stamp-knock)" stroke="none">SOLD</text>
+                <text x="110" y="78" textAnchor="middle" fontFamily="Ndot 57, Rupee Dot, sans-serif" fontSize="26" stroke="none">{lot.leader}</text>
+                <text x="110" y="162" textAnchor="middle" fontFamily="Ndot 57, Rupee Dot, sans-serif" fontSize="22" stroke="none">{money(lot.bid)}</text>
               </g>
             </svg>
           ) : (
@@ -163,7 +163,7 @@ export default function SoldCeremony({ lot, player, mine, roomCode, tags }: { lo
               <g filter={`url(#ink-${uid})`} fill="currentColor" stroke="currentColor">
                 <rect x="6" y="6" width="248" height="98" rx="10" fill="none" strokeWidth="7" />
                 <rect x="16" y="16" width="228" height="78" rx="6" fill="none" strokeWidth="2" />
-                <text x="130" y="76" textAnchor="middle" fontFamily="Bebas Neue, sans-serif" fontSize="62" letterSpacing="8" stroke="none">UNSOLD</text>
+                <text x="130" y="76" textAnchor="middle" fontFamily="Ndot 57, Rupee Dot, sans-serif" fontSize="62" letterSpacing="8" stroke="none">UNSOLD</text>
               </g>
             </svg>
           )}

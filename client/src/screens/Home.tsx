@@ -81,6 +81,9 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
           </div>
         </motion.form>
       </div>
+      <footer className="credits">
+        Typeface <b>Ndot 57</b> &amp; <b>NType 82</b> by <a href="https://nothing.tech" target="_blank" rel="noreferrer">Nothing</a> · Lettera Mono by Lineto · Space Grotesk (OFL)
+      </footer>
     </div>
   );
 }

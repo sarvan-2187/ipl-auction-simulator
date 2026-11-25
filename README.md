@@ -70,4 +70,15 @@ client/public/teams    franchise logos and backdrop patterns
 scripts/fetch-data.mjs data + image scraper
 ```
 
+## Credits
+
+**Typography by [Nothing](https://nothing.tech).** The interface uses Nothing's own typefaces:
+
+- **Ndot 57**: the dot-matrix face for prices, the clock, headlines, player surnames and the SOLD stamp
+- **NType 82**: first names and editorial accents
+- **Lettera Mono** (Lineto), the monospace used across Nothing OS: buttons, labels and ticket serials
+- **Space Grotesk** (SIL OFL): body text, and the ₹ sign, which Ndot/NType don't include
+
+Font files come from the community collection [Return761/Nothing-Fonts](https://github.com/Return761/Nothing-Fonts), converted to WOFF2. See `client/public/fonts/CREDITS.md`. Ndot, NType and Lettera are proprietary and are used here only for a private, non-commercial game.
+
 Team names, logos and player photos belong to their owners (BCCI/IPL and the franchises). This repo is a private, non-commercial game for friends.
