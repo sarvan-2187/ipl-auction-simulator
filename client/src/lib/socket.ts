@@ -47,6 +47,12 @@ socket.on('connect', () => {
 });
 socket.on('disconnect', () => { connected = false; emit(); });
 
+// Free hosts (e.g. Render) sleep after ~15 min without HTTP requests even while WebSockets are open.
+// While you're in a room, ping every 4 minutes so a long auction never gets put to sleep.
+setInterval(() => {
+  if (currentCode && document.visibilityState === 'visible') fetch('/healthz', { cache: 'no-store' }).catch(() => {});
+}, 4 * 60 * 1000);
+
 export function useRoom() {
   return useSyncExternalStore(
     (f) => { subs.add(f); return () => subs.delete(f); },

@@ -1,9 +1,15 @@
-# One-click deploy on Render (Blueprint). Free plan works but sleeps when idle.
+# Render Blueprint: New → Blueprint → pick this repo. Free plan sleeps when nobody is connected;
+# rooms live in memory, so a restart or redeploy ends any auction in progress.
 services:
   - type: web
     name: ipl-auction
     runtime: node
     plan: free
+    branch: ccr-fc7f7494-xwtaan
     buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"

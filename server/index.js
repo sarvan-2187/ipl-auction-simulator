@@ -1,4 +1,5 @@
 import express from 'express';
+import compression from 'compression';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +12,12 @@ const PORT = process.env.PORT || 3001;
 const REACTIONS = new Set(['fire', 'joy', 'scream', 'clap', 'money', 'clown', 'huff', 'pray', 'mindblown', 'skull']);
 
 const app = express();
-app.use(express.static(DIST, { maxAge: '1h', index: false }));
+app.set('trust proxy', 1);
+app.use(compression());
+// Photos, fonts, emoji, flags and hashed build assets never change between deploys of the same file name
+const LONG = { maxAge: '30d', immutable: true, index: false };
+for (const dir of ['assets', 'players', 'fonts', 'emoji', 'flags', 'teams']) app.use(`/${dir}`, express.static(path.join(DIST, dir), LONG));
+app.use(express.static(DIST, { maxAge: '5m', index: false }));
 app.get('/healthz', (_req, res) => res.json({ ok: true, rooms: rooms.size }));
 app.get('*', (_req, res) => res.sendFile(path.join(DIST, 'index.html'), (err) => err && res.status(404).send('Run "npm run build" first, or use "npm run dev".')));
 
