@@ -386,8 +386,6 @@ export class Room {
       this.paused = false;
       if (this.lot?.status === 'live') this.lot.endsAt = now + this.pausedRemaining;
       else this.nextLotAt = now + 1000;
-    } else if (action === 'hammer') {
-      this.hammer(now);
     } else if (action === 'end') {
       if (this.lot?.status === 'live') this.hammer(now);
       this.finish();

@@ -174,7 +174,6 @@ export default function Auction({ room }: { room: RoomState }) {
         {isHost && (
           <div className="row" style={{ gap: 6 }}>
             <button className="btn btn-sm" onClick={() => host(room.paused ? 'resume' : 'pause')}>{room.paused ? 'Resume' : 'Pause'}</button>
-            <button className="btn btn-sm only-desktop" onClick={() => host('hammer')} disabled={lot?.status !== 'live'} title="Close this lot now">Hammer</button>
             <button className="btn btn-sm btn-danger" onClick={() => host('end')}>End</button>
           </div>
         )}

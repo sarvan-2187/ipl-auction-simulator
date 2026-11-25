@@ -518,7 +518,6 @@ img { display: block; }
   .a-top .chip-gold { display: none; }
   .a-top .btn-sm { height: 30px; padding: 0 10px; font-size: 12px; }
   .a-top .icon-btn { width: 30px; height: 30px; }
-  .a-top .btn-sm[title="Close this lot now"] { display: none !important; }
 
   .a-grid { grid-template-columns: minmax(0, 1fr); padding: 0 max(8px, env(safe-area-inset-right)) 6px max(8px, env(safe-area-inset-left)); gap: 6px; }
   .a-grid > .side.left, .a-grid > .side.right { display: none !important; }
