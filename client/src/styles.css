@@ -878,3 +878,12 @@ body { font-feature-settings: 'ss01' off; }
   .head .h-name { font-size: 11px; padding: 1px 6px; max-width: 24cqi; }
   .head .h-rt { font-size: 10px; min-width: 20px; padding: 1px 4px; }
 }
+.head .h-menu em { align-self: center; padding: 0 4px; font-style: normal; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+.bench-card .b-roles { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.bench-card .b-roles span { padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; color: var(--text-3); border: 1px solid var(--line); }
+.bench-card .b-roles span.on { color: #1a1200; background: var(--gold); border-color: var(--gold); }
+.bench-card .b-roles span.os { color: #9fd3ff; border-color: rgba(120, 190, 255, 0.35); }
+.bench-card .b-roles span[role="button"]:not(.on):hover { border-color: var(--gold); color: var(--text); }
+.xi-share { width: 100%; }
+.share-modal { position: fixed; z-index: 81; left: 50%; top: 50%; translate: -50% -50%; width: min(440px, 92vw); display: grid; gap: 12px; padding: 14px; border-radius: 22px; background: #0b0b0b; border: 1px solid var(--line-hi); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9); }
+.share-modal img { width: 100%; height: auto; border-radius: 14px; max-height: 70vh; object-fit: contain; }

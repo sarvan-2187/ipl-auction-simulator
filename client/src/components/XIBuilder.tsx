@@ -8,6 +8,7 @@ import { autoXI, MAX_OS, roleIn, suggestions, XI_SIZE, xiInfo } from '../lib/xi'
 import type { Player, Role, RoomState, TeamState } from '../lib/types';
 import { TeamLogo, initials, useToast } from './ui';
 import { sfx } from '../lib/sound';
+import { renderXICard, shareOrDownload, SITE } from '../lib/shareCard';
 
 // y = row height on the ground; half = how far from centre the row may spread (the oval is narrower at the ends)
 const ROWS: { role: Role; label: string; y: number; half: number }[] = [
@@ -22,6 +23,17 @@ const short = (p: Player) => {
 };
 
 export default function XIBuilder({ room, team, readOnly = false, onDone }: { room: RoomState; team: TeamState; readOnly?: boolean; onDone?: () => void }) {
+  const [card, setCard] = useState<{ url: string; blob: Blob } | null>(null);
+  const [making, setMaking] = useState(false);
+  const owner = room.members.find((m) => m.id === team.ownerId)?.name || team.code;
+  const makeCard = async () => {
+    setMaking(true);
+    try {
+      const blob = await renderXICard({ ...team, xi: ids }, ids, owner, room.code);
+      setCard({ url: URL.createObjectURL(blob), blob });
+    } catch { toast('Could not create the image', true); }
+    setMaking(false);
+  };
   const toast = useToast();
   const info0 = getTeam(team.code)!;
   const [ids, setIds] = useState<number[]>(() => team.xi ?? []);
@@ -133,6 +145,7 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
                       <AnimatePresence>
                         {sel === id && (
                           <motion.span className="h-menu" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+                            <em>Play as</em>
                             {(p.roles || [p.role]).map((r) => (
                               <span key={r} role="button" tabIndex={0} className={r === role ? 'on' : ''} onClick={() => r !== role && setRole(id, r)}>{r} {ratingAs(p, r)}</span>
                             ))}
@@ -163,6 +176,10 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
               <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => update([])} disabled={!ids.length}>Clear</button>
             </div>
           )}
+          {editable && ids.length > 0 && <div className="dim" style={{ fontSize: 12 }}>Tap a player on the ground to change his role or bench him.</div>}
+          {ids.length > 0 && (
+            <button className="btn btn-sm xi-share" onClick={makeCard} disabled={making}>{making ? 'Creating image…' : 'Share XI as image'}</button>
+          )}
           {info.issues.length > 0 && (
             <div className="xi-issues">{info.issues.map((t) => <div key={t}>{t}</div>)}</div>
           )}
@@ -187,7 +204,18 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
                   return (
                     <motion.button layoutId={`xi-${e.id}`} key={e.id} className="bench-card" onClick={() => add(e.id)} disabled={!editable}>
                       <span className="b-img">{src ? <img src={src} alt="" loading="lazy" /> : <em>{initials(p.name)}</em>}</span>
-                      <span className="b-txt"><span className="pn ellipsis">{p.name}</span><small>{role} {ratingAs(p, role)}{p.overseas ? ' · OS' : ''}</small></span>
+                      <span className="b-txt">
+                        <span className="pn ellipsis">{p.name}</span>
+                        <span className="b-roles">
+                          {(p.roles || [p.role]).map((r) => (
+                            <span key={r} role="button" tabIndex={0} className={r === role ? 'on' : ''}
+                              onClick={(ev) => { ev.stopPropagation(); if (editable && r !== role) setRole(e.id, r); }}>
+                              {r} {ratingAs(p, r)}
+                            </span>
+                          ))}
+                          {p.overseas && <span className="os">OS</span>}
+                        </span>
+                      </span>
                       {editable && <span className="b-add">+</span>}
                     </motion.button>
                   );
@@ -208,6 +236,24 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
           )}
         </aside>
       </div>
+
+      <AnimatePresence>
+        {card && (
+          <>
+            <motion.div className="drawer-back" style={{ zIndex: 80 }} onClick={() => { URL.revokeObjectURL(card.url); setCard(null); }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+            <motion.div className="share-modal" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} role="dialog" aria-label="Share your XI">
+              <img src={card.url} alt={`${info0.name} Playing XI`} />
+              <div className="row" style={{ gap: 8 }}>
+                <button className="btn btn-gold" style={{ flex: 1 }} onClick={async () => {
+                  const r = await shareOrDownload(card.blob, `${team.code}-playing-xi.png`, `My ${info0.name} Playing XI: rated ${info.rating.toFixed(1)}. Build yours at https://${SITE}`);
+                  if (r === 'downloaded') toast('Image saved');
+                }}>Share</button>
+                <button className="btn" onClick={() => { URL.revokeObjectURL(card.url); setCard(null); }}>Close</button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
