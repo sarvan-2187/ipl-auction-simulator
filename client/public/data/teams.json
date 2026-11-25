@@ -1,0 +1,112 @@
+[
+ {
+  "code": "CSK",
+  "id": 1622,
+  "slug": "chennai-super-kings",
+  "name": "Chennai Super Kings",
+  "city": "Chennai",
+  "primary": "#F9CD05",
+  "secondary": "#0A4595",
+  "text": "#1a1a1a",
+  "titles": 5
+ },
+ {
+  "code": "MI",
+  "id": 1854,
+  "slug": "mumbai-indians",
+  "name": "Mumbai Indians",
+  "city": "Mumbai",
+  "primary": "#004BA0",
+  "secondary": "#D1AB3E",
+  "text": "#ffffff",
+  "titles": 5
+ },
+ {
+  "code": "RCB",
+  "id": 2138,
+  "slug": "royal-challengers-bengaluru",
+  "name": "Royal Challengers Bengaluru",
+  "city": "Bengaluru",
+  "primary": "#D11D26",
+  "secondary": "#1C1C1C",
+  "text": "#ffffff",
+  "titles": 1
+ },
+ {
+  "code": "KKR",
+  "id": 1873,
+  "slug": "kolkata-knight-riders",
+  "name": "Kolkata Knight Riders",
+  "city": "Kolkata",
+  "primary": "#3A225D",
+  "secondary": "#B3A123",
+  "text": "#ffffff",
+  "titles": 3
+ },
+ {
+  "code": "DC",
+  "id": 1396,
+  "slug": "delhi-capitals",
+  "name": "Delhi Capitals",
+  "city": "Delhi",
+  "primary": "#17479E",
+  "secondary": "#EF1B23",
+  "text": "#ffffff",
+  "titles": 0
+ },
+ {
+  "code": "PBKS",
+  "id": 2040,
+  "slug": "punjab-kings",
+  "name": "Punjab Kings",
+  "city": "Mohali",
+  "primary": "#DD1F2D",
+  "secondary": "#A7A9AC",
+  "text": "#ffffff",
+  "titles": 0
+ },
+ {
+  "code": "RR",
+  "id": 1558,
+  "slug": "rajasthan-royals",
+  "name": "Rajasthan Royals",
+  "city": "Jaipur",
+  "primary": "#EA1A85",
+  "secondary": "#254AA5",
+  "text": "#ffffff",
+  "titles": 1
+ },
+ {
+  "code": "SRH",
+  "id": 1153,
+  "slug": "sunrisers-hyderabad",
+  "name": "Sunrisers Hyderabad",
+  "city": "Hyderabad",
+  "primary": "#F26522",
+  "secondary": "#1A1A1A",
+  "text": "#ffffff",
+  "titles": 1
+ },
+ {
+  "code": "GT",
+  "id": 2879,
+  "slug": "gujarat-titans",
+  "name": "Gujarat Titans",
+  "city": "Ahmedabad",
+  "primary": "#1B2133",
+  "secondary": "#B9975B",
+  "text": "#ffffff",
+  "titles": 1
+ },
+ {
+  "code": "LSG",
+  "id": 2880,
+  "slug": "lucknow-super-giants",
+  "name": "Lucknow Super Giants",
+  "city": "Lucknow",
+  "primary": "#0057E2",
+  "secondary": "#F28B00",
+  "text": "#ffffff",
+  "titles": 0
+ }
+]

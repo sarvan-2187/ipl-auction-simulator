@@ -1,0 +1,9 @@
+# One-click deploy on Render (Blueprint). Free plan works but sleeps when idle.
+services:
+  - type: web
+    name: ipl-auction
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz

@@ -1,0 +1,25 @@
+{
+  "name": "ipl-auction-simulator",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Real-time multiplayer IPL auction game for friends: room codes, all 10 franchises, 430+ players with photos.",
+  "scripts": {
+    "postinstall": "npm --prefix client install --no-audit --no-fund",
+    "dev": "concurrently -k -n server,client -c blue,magenta \"node --watch server/index.js\" \"npm --prefix client run dev\"",
+    "build": "npm --prefix client run build",
+    "start": "node server/index.js",
+    "test": "node --test server/game.test.js",
+    "fetch-data": "node scripts/fetch-data.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.22.3",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7"
+  }
+}
