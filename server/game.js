@@ -11,7 +11,7 @@ export const DEFAULT_SETTINGS = {
   maxSquad: 20,
   minSquad: 15,
   maxOverseas: 8,
-  bidTime: 10, // seconds the clock resets to after each bid
+  bidTime: 7, // seconds the clock resets to after each bid
   pool: 'quick', // quick | standard | full
   unsoldRound: true,
 };

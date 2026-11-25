@@ -6,10 +6,10 @@ import { TeamLogo, useToast, GavelIcon } from '../components/ui';
 import { sfx } from '../lib/sound';
 
 const PRESETS: { key: string; label: string; sub: string; patch: Partial<Settings> }[] = [
-  { key: 'blitz', label: 'Blitz', sub: '~20 min', patch: { pool: 'blitz', minSquad: 11, maxSquad: 15, maxOverseas: 5, bidTime: 8 } },
-  { key: 'quick', label: 'Quick', sub: '~45 min', patch: { pool: 'quick', minSquad: 15, maxSquad: 20, maxOverseas: 8, bidTime: 10 } },
-  { key: 'standard', label: 'Classic', sub: '~1.5 hr', patch: { pool: 'standard', minSquad: 18, maxSquad: 25, maxOverseas: 8, bidTime: 12 } },
-  { key: 'full', label: 'Mega', sub: 'All players', patch: { pool: 'full', minSquad: 18, maxSquad: 25, maxOverseas: 8, bidTime: 12 } },
+  { key: 'blitz', label: 'Blitz', sub: '~20 min', patch: { pool: 'blitz', minSquad: 11, maxSquad: 15, maxOverseas: 5, bidTime: 7 } },
+  { key: 'quick', label: 'Quick', sub: '~45 min', patch: { pool: 'quick', minSquad: 15, maxSquad: 20, maxOverseas: 8, bidTime: 7 } },
+  { key: 'standard', label: 'Classic', sub: '~1.5 hr', patch: { pool: 'standard', minSquad: 18, maxSquad: 25, maxOverseas: 8, bidTime: 7 } },
+  { key: 'full', label: 'Mega', sub: 'All players', patch: { pool: 'full', minSquad: 18, maxSquad: 25, maxOverseas: 8, bidTime: 7 } },
 ];
 
 export default function Lobby({ room }: { room: RoomState }) {

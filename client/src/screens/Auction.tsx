@@ -346,7 +346,7 @@ function BidBox({ lot, ms, paused, owner, bidTime }: { lot: Lot; ms: number; pau
   const secs = Math.ceil(ms / 1000);
   const frac = Math.min(1, ms / (bidTime * 1000));
   const crit = secs <= 3;
-  const warn = secs <= 6;
+  const warn = secs <= 4;
   const live = lot.status === 'live';
   return (
     <div className="bidbox">
