@@ -384,6 +384,7 @@ export class Room {
     const team = m && this.teams[m.team];
     if (!team) throw new Error('You are spectating');
     if (this.lot.leader === team.code) throw new Error('You are already the highest bidder');
+    if (this.lot.passed.includes(team.code)) throw new Error('You passed on this player');
     const expected = this.nextBidAmount();
     if (!Number.isFinite(amount) || amount <= 0 || amount % 5 !== 0) throw new Error('Invalid bid amount');
     if (amount < expected) {
@@ -398,7 +399,6 @@ export class Room {
     this.lot.bid = amount;
     this.lot.leader = team.code;
     this.lot.history.push({ team: team.code, amount, t: now });
-    this.lot.passed = this.lot.passed.filter((c) => c !== team.code);
     this.lot.endsAt = now + this.settings.bidTime * 1000;
     this.botPlans = {};
   }

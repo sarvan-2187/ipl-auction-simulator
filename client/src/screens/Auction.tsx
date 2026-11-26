@@ -92,8 +92,9 @@ export default function Auction({ room }: { room: RoomState }) {
   const busy = useRef(false);
 
   const next = lot?.next ?? null;
-  const block = blocker(room, myTeam, next);
-  const iPassed = !!(myTeam && lot?.passed.includes(myTeam.code));
+  const iPassed = !!(myTeam && lot?.status === 'live' && lot.passed.includes(myTeam.code));
+  // passing is final for this player
+  const block = iPassed ? 'Passed on this player' : blocker(room, myTeam, next);
 
   // ---- sounds & effects on state transitions
   const prev = useRef<{ id?: number; bids?: number; status?: string; leader?: string | null }>({});

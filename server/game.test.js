@@ -36,6 +36,10 @@ test('bid validation: stale amounts, self-outbid, purse reserve', () => {
   r.placeBid('h', r.nextBidAmount(), t);
   r.placeBid('f', r.nextBidAmount(), t);
   assert.throws(() => r.placeBid('h', base, t, null), /Price moved/);
+  // passing is final for that player
+  r.pass('h', t);
+  assert.throws(() => r.placeBid('h', r.nextBidAmount(), t), /passed/);
+  r.lot.passed = [];
   r.teams.CSK.purse = 17 * 30 + 1; // can only afford reserve
   assert.throws(() => r.placeBid('h', r.nextBidAmount(), t), /purse/);
 });
