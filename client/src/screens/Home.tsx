@@ -6,6 +6,7 @@ import { GavelIcon, TeamLogo, useToast } from '../components/ui';
 import { sfx } from '../lib/sound';
 import type { Lot, Player } from '../lib/types';
 import SoldCeremony from '../components/SoldCeremony';
+import InstallButton from '../components/InstallButton';
 
 export default function Home({ initialCode }: { initialCode: string | null }) {
   const players = allPlayers();
@@ -33,6 +34,7 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
             Pick a franchise, bring your friends and fight over every star in a live auction. Real purses, overseas caps, squad rules and the hammer.
           </motion.p>
           <EntryForm initialCode={initialCode} formRef={formRef} />
+          <InstallButton className="hero-install" />
         </div>
         <motion.div className="lp-hero-demo" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4, duration: 0.6 }}>
           <AuctionDemo />
@@ -112,7 +114,7 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
             <h2 className="display">Ready for the hammer?</h2>
             <p>Free, no sign-up, works on any phone or laptop. Make a room and share the code.</p>
           </div>
-          <button className="btn btn-gold" onClick={toTop}>Start an auction</button>
+          <div className="lp-cta-btns"><button className="btn btn-gold" onClick={toTop}>Start an auction</button><InstallButton /></div>
         </InView>
       </section>
 
@@ -136,7 +138,7 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
 
 // ---------- create / join ----------
 function EntryForm({ initialCode, formRef }: { initialCode: string | null; formRef: React.RefObject<HTMLFormElement> }) {
-  const [tab, setTab] = useState<'create' | 'join'>(initialCode ? 'join' : 'create');
+  const [tab, setTab] = useState<'create' | 'join'>(initialCode || new URLSearchParams(location.search).get('action') === 'join' ? 'join' : 'create');
   const [name, setNameState] = useState(getName());
   const [code, setCode] = useState(initialCode || '');
   const [busy, setBusy] = useState(false);
