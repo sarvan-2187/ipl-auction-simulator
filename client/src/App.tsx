@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { loadData } from './lib/data';
 import { useRoom, useConnected, joinRoom, getName } from './lib/socket';
 import { ToastProvider } from './components/ui';
+import ConnToast from './components/ConnToast';
 import Home from './screens/Home';
 import Lobby from './screens/Lobby';
 import Auction from './screens/Auction';
@@ -56,7 +57,7 @@ export default function App() {
         <i className="blob b1" /><i className="blob b2" /><i className="blob b3" /><i className="blob b4" />
       </div>
       <div className="grain" aria-hidden="true" />
-      {!connected && <div className="conn-banner">Reconnecting to the auction server…</div>}
+      <ConnToast connected={connected} />
       {!ready ? (
         <div className="home"><div className="eyebrow">Loading auction room…</div></div>
       ) : !room ? (
