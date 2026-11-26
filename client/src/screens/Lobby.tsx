@@ -122,8 +122,16 @@ export default function Lobby({ room }: { room: RoomState }) {
               {isHost ? <div className="stepper"><button onClick={() => step('maxOverseas', -1)}>−</button><span>{s.maxOverseas}</span><button onClick={() => step('maxOverseas', 1)}>+</button></div> : <b>{s.maxOverseas}</b>}
             </div>
             <div className="setting set-b">
-              <label>Squad rules<small>Minimum batters, bowlers, all-rounders and keepers per squad</small></label>
-              <div className="role-steppers">
+              <div className="row rules-head">
+                <label>Squad rules<small>{s.roleRules === false ? 'Off: buy any mix of players' : 'Minimum batters, bowlers, all-rounders and keepers per squad'}</small></label>
+                {isHost ? (
+                  <div className="seg slide" style={{ width: 120, ['--n' as any]: 2, ['--i' as any]: s.roleRules === false ? 1 : 0 }}>
+                    <button className={s.roleRules !== false ? 'on' : ''} onClick={() => set({ roleRules: true })}>On</button>
+                    <button className={s.roleRules === false ? 'on' : ''} onClick={() => set({ roleRules: false })}>Off</button>
+                  </div>
+                ) : <b>{s.roleRules === false ? 'Off' : 'On'}</b>}
+              </div>
+              {s.roleRules !== false && <div className="role-steppers">
                 {(['BAT', 'BOWL', 'AR', 'WK'] as const).map((r) => {
                   const rm = s.roleMin || { BAT: 3, BOWL: 4, AR: 2, WK: 2 };
                   return isHost ? (
@@ -134,7 +142,7 @@ export default function Lobby({ room }: { room: RoomState }) {
                     </div>
                   ) : <span className="chip" key={r}>{r} {rm[r]}</span>;
                 })}
-              </div>
+              </div>}
             </div>
             <div className="setting set-a">
               <label>Computer difficulty<small>{CPU_HELP[s.cpuLevel || 'medium']}</small></label>

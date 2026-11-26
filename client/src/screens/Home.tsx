@@ -205,14 +205,16 @@ function AuctionDemo() {
     const target = Math.min(2500, p.base * (4 + Math.random() * 5));
     const seq: DemoBid[] = [];
     let amt = p.base;
-    for (let k = 0; amt <= target && k < 14; k++) { seq.push({ team: pool[k % pool.length], amount: amt }); amt += increment(amt) * (k > 5 ? 2 : 1); }
+    // about 6 bids, 1.5 s apart, so you can follow each paddle
+    for (let k = 0; amt <= target && k < 6; k++) { seq.push({ team: pool[k % pool.length], amount: amt }); amt += increment(amt) * (k > 2 ? 3 : 2); }
     setBids([]); setPhase('live'); setClock(7);
-    const step = reduce ? 900 : 520;
-    seq.forEach((b, k) => at(500 + k * step, () => { setBids((x) => [...x, b]); setClock(7); }));
+    const step = 1500;
+    seq.forEach((b, k) => { at(500 + k * step, () => { setBids((x) => [...x, b]); setClock(7); }); at(500 + k * step + 1000, () => setClock(6)); });
     const end = 500 + seq.length * step;
-    [6, 5, 4, 3].forEach((c, k) => at(end + k * 260, () => setClock(c)));
-    at(end + 1200, () => setPhase('sold'));
-    at(end + 4600, () => setI((x) => x + 1));
+    // last bid stands: the clock runs down 5..1, then the hammer
+    [5, 4, 3, 2, 1].forEach((c, k) => at(end + k * 450, () => setClock(c)));
+    at(end + 5 * 450, () => setPhase('sold'));
+    at(end + 5 * 450 + 3400, () => setI((x) => x + 1));
     return () => { alive = false; timers.forEach(clearTimeout); };
   }, [i, p, teams, reduce]);
 

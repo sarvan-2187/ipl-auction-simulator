@@ -58,6 +58,10 @@ export function roleCounts(squad: SquadEntry[]) {
   for (const e of squad) c[roleOf(e)]++;
   return c;
 }
+const NO_ROLES: Record<Role, number> = { BAT: 0, BOWL: 0, AR: 0, WK: 0 };
+// Role minimums that apply: none when the host switched squad rules off
+export const ruleMin = (s: { roleRules?: boolean; roleMin?: Record<Role, number> }) => (s.roleRules === false ? NO_ROLES : s.roleMin || NO_ROLES);
+
 export function unmet(counts: Record<Role, number>, roleMin: Partial<Record<Role, number>> | undefined) {
   const out: Partial<Record<Role, number>> = {};
   for (const r of ROLES) { const n = Math.max(0, (roleMin?.[r] || 0) - counts[r]); if (n) out[r] = n; }

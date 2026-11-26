@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   unsoldRound: true,
   cpuLevel: 'medium', // computer players: easy | medium | hard
   roleMin: { BAT: 3, BOWL: 4, AR: 2, WK: 2 }, // squad rules
+  roleRules: true, // false: no role minimums at all
   trading: true, // owners can swap players and cash after the auction
 };
 export const MAX_OPEN_TRADES = 3; // pending offers each team can have out at once
@@ -41,6 +42,10 @@ export function roleCounts(squad) {
   for (const x of squad) c[x.role || PLAYER_BY_ID.get(x.id)?.role || 'BAT']++;
   return c;
 }
+const NO_ROLES = { BAT: 0, BOWL: 0, AR: 0, WK: 0 };
+// The role minimums that apply: none when the host switched squad rules off
+export const ruleMin = (settings) => (settings?.roleRules === false ? NO_ROLES : settings?.roleMin || DEFAULT_SETTINGS.roleMin);
+
 export function unmet(counts, roleMin) {
   const out = {};
   for (const r of ROLES) { const n = Math.max(0, (roleMin?.[r] || 0) - counts[r]); if (n) out[r] = n; }
@@ -103,7 +108,7 @@ export function buildQueue(settings, numTeams, seed) {
   const pool = [...pick(capped, Math.min(capped.length, want - nUn)), ...pick(uncapped, nUn)];
   // Make sure every team can meet the squad rules: top up each role from the best players left out
   const inPool = new Set(pool.map((p) => p.id));
-  const roleMin = settings.roleMin || DEFAULT_SETTINGS.roleMin;
+  const roleMin = ruleMin(settings);
   for (const r of ROLES) {
     const want = numTeams * ((roleMin[r] || 0) + 1);
     let have = pool.filter((p) => p.role === r).length;
@@ -263,6 +268,7 @@ export class Room {
     if (patch.pool != null && POOL_SIZES[patch.pool] !== undefined) s.pool = patch.pool;
     if (patch.unsoldRound != null) s.unsoldRound = !!patch.unsoldRound;
     if (patch.trading != null) s.trading = !!patch.trading;
+    if (patch.roleRules != null) s.roleRules = !!patch.roleRules;
     if (patch.cpuLevel != null && CPU_LEVELS[patch.cpuLevel]) s.cpuLevel = patch.cpuLevel;
     if (patch.roleMin && typeof patch.roleMin === 'object') {
       const rm = { ...s.roleMin };
@@ -333,9 +339,9 @@ export class Room {
     if (team.squad.length >= s.maxSquad) return 'Squad full';
     if (p.overseas && this.overseasCount(team) >= s.maxOverseas) return 'Overseas limit reached';
     // Squad rules: after this buy, the open slots must still cover every unmet role minimum
-    const role = bestRoleFor(team.squad, p, s.roleMin);
+    const role = bestRoleFor(team.squad, p, ruleMin(s));
     const after = roleCounts(team.squad); after[role]++;
-    const need = unmet(after, s.roleMin);
+    const need = unmet(after, ruleMin(s));
     const needTotal = Object.values(need).reduce((a, b) => a + b, 0);
     const slotsLeft = s.maxSquad - team.squad.length - 1;
     const needList = Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ');
@@ -432,7 +438,7 @@ export class Room {
     if (lot.leader) {
       const team = this.teams[lot.leader];
       team.purse -= lot.bid;
-      team.squad.push({ id: lot.id, price: lot.bid, role: bestRoleFor(team.squad, p, this.settings.roleMin) });
+      team.squad.push({ id: lot.id, price: lot.bid, role: bestRoleFor(team.squad, p, ruleMin(this.settings)) });
       lot.status = 'sold';
       this.addLog({ kind: 'sold', id: lot.id, team: team.code, amount: lot.bid, text: `${p.name} SOLD to ${team.code}` });
     } else {
@@ -561,7 +567,7 @@ export class Room {
     if (!team) throw new Error('You are spectating');
     const s = this.settings;
     if (team.squad.length < s.minSquad) throw new Error(`Buy at least ${s.minSquad} players first`);
-    const need = unmet(roleCounts(team.squad), s.roleMin);
+    const need = unmet(roleCounts(team.squad), ruleMin(s));
     const list = Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ');
     if (list) throw new Error(`Squad rules still need ${list}`);
     if (this.lot?.status === 'live' && this.lot.leader === team.code) throw new Error('Wait until this lot closes, you hold the bid');
@@ -683,7 +689,7 @@ export class Room {
       for (const id of ids) {
         const i = src.squad.findIndex((x) => x.id === id);
         const [entry] = src.squad.splice(i, 1);
-        dst.squad.push({ id: entry.id, price: entry.price, role: bestRoleFor(dst.squad, PLAYER_BY_ID.get(id), this.settings.roleMin) });
+        dst.squad.push({ id: entry.id, price: entry.price, role: bestRoleFor(dst.squad, PLAYER_BY_ID.get(id), ruleMin(this.settings)) });
       }
     };
     move(a, b, tr.give);
@@ -753,7 +759,7 @@ export class Room {
     const target = { BAT: 7, BOWL: 8, AR: 5, WK: 3 }[p.role];
     if (counts[p.role] >= target) v *= 0.55;
     // chase roles the squad rules still need
-    const need = unmet(counts, s.roleMin);
+    const need = unmet(counts, ruleMin(s));
     if (rolesOf(p).some((r) => need[r])) v *= this.round === 2 || this.queue.length - this.idx < 25 ? 1.8 : 1.3;
     const needed = Math.max(0, s.minSquad - team.squad.length);
     const left = this.queue.length - this.idx;

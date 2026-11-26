@@ -1553,3 +1553,22 @@ body { font-feature-settings: 'ss01' off; }
   .d-card .d-icon { grid-row: auto; width: 28px; height: 28px; }
   .landing .site-foot { gap: 10px; margin-top: 28px; }
 }
+/* demo card: content explicitly above the franchise artwork (some Android GPUs mis-layer masked, blended layers) */
+.demo .demo-art { z-index: 0; }
+.demo > .demo-top, .demo > .demo-player, .demo > .demo-bid, .demo > .demo-feed { position: relative; z-index: 1; }
+.demo .demo-player .demo-name { position: relative; z-index: 2; }
+.demo .ceremony { z-index: 5; }
+.demo-art { will-change: opacity; transform: translateZ(0); }
+/* squad rules: on/off switch above the steppers */
+.setting:has(.rules-head) { flex-wrap: wrap; }
+.rules-head { width: 100%; justify-content: space-between; gap: 12px; flex-wrap: nowrap; }
+.rules-head label { min-width: 0; }
+.rules-head .seg { flex: none; }
+
+/* phones: disclaimer cards one per row, icon beside the text */
+@media (max-width: 640px) {
+  .landing .disclaimer { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .d-card { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; padding: 12px; }
+  .d-card .d-icon { grid-row: span 2; width: 32px; height: 32px; }
+}
+.setting > .seg { margin-left: auto; }

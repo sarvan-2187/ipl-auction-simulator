@@ -306,3 +306,19 @@ test('done buying: rules must be met, then the team sits out and computers finis
   assert.equal(r.phase, 'results');
   assert.equal(r.teams.CSK.squad.length, 11);
 });
+
+test('squad rules switched off: no role minimums anywhere', () => {
+  const r = new Room('NORUL', 'h');
+  r.join('h', 'Host'); r.pickTeam('h', 'CSK'); r.addBot('h', 'MI');
+  r.updateSettings('h', { roleRules: false, minSquad: 11 });
+  assert.equal(r.settings.roleRules, false);
+  r.start('h', 0);
+  const inPool = new Set(r.queue.map((q) => q.id));
+  // 11 batters and nothing else is fine when rules are off
+  for (const p of PLAYERS.filter((x) => x.role === 'BAT' && !inPool.has(x.id)).slice(0, 11)) r.teams.CSK.squad.push({ id: p.id, price: 30, role: 'BAT' });
+  r.tick(3000);
+  assert.doesNotThrow(() => r.doneBuying('h', 3000));
+  let t = 3000;
+  while (r.phase === 'auction' && t < 60000) r.tick((t += 200));
+  assert.equal(r.phase, 'results');
+});

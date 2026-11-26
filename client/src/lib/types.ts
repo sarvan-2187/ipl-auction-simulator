@@ -77,6 +77,7 @@ export interface Settings {
   pool: 'blitz' | 'quick' | 'standard' | 'full';
   unsoldRound: boolean;
   roleMin: Record<Role, number>;
+  roleRules?: boolean;
   cpuLevel?: 'easy' | 'medium' | 'hard';
   trading?: boolean;
 }

@@ -4,7 +4,7 @@ import { ReactionBar, ReactionLayer } from '../components/Reactions';
 import HostTransfer from '../components/HostTransfer';
 import { AnimatePresence, motion } from 'framer-motion';
 import SoldCeremony, { type CeremonyTags } from '../components/SoldCeremony';
-import { bestRoleFor, ratingAs, roleCounts, unmet, ROLES, getPlayer, getTeam, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
+import { bestRoleFor, ruleMin, ratingAs, roleCounts, unmet, ROLES, getPlayer, getTeam, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
 import { call, memberId } from '../lib/socket';
 import type { Lot, Player, RoomState, TeamState } from '../lib/types';
 import { Face, GavelIcon, Silhouette, TeamLogo, initials, teamVars, useToast } from '../components/ui';
@@ -45,9 +45,9 @@ function blocker(room: RoomState, team: TeamState | undefined, amount: number | 
   const os = team.squad.filter((x) => getPlayer(x.id).overseas).length;
   if (p.overseas && os >= s.maxOverseas) return 'Overseas cap';
   // squad rules: open slots after this buy must still cover unmet role minimums
-  const role = bestRoleFor(team.squad, p, s.roleMin);
+  const role = bestRoleFor(team.squad, p, ruleMin(s));
   const after = roleCounts(team.squad); after[role]++;
-  const need = unmet(after, s.roleMin);
+  const need = unmet(after, ruleMin(s));
   const needTotal = Object.values(need).reduce((a, b) => a + (b || 0), 0);
   const needList = Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ');
   const slotsLeft = s.maxSquad - team.squad.length - 1;
@@ -66,7 +66,7 @@ function blocker(room: RoomState, team: TeamState | undefined, amount: number | 
 // What your squad still has to buy, and the money to keep for it (shown under the Bid button)
 function squadNeeds(room: RoomState, team: TeamState) {
   const s = room.settings;
-  const need = unmet(roleCounts(team.squad), s.roleMin);
+  const need = unmet(roleCounts(team.squad), ruleMin(s));
   const needTotal = Object.values(need).reduce((a, b) => a + (b || 0), 0);
   const mustBuy = Math.max(needTotal, s.minSquad - team.squad.length);
   if (mustBuy <= 0) return null;
