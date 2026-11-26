@@ -17,7 +17,9 @@ export const DEFAULT_SETTINGS = {
   unsoldRound: true,
   cpuLevel: 'medium', // computer players: easy | medium | hard
   roleMin: { BAT: 3, BOWL: 4, AR: 2, WK: 2 }, // squad rules
+  trading: true, // owners can swap players and cash after the auction
 };
+export const MAX_OPEN_TRADES = 3; // pending offers each team can have out at once
 export const ROLES = ['BAT', 'BOWL', 'AR', 'WK'];
 export const MAX_SPECTATORS = 10;
 export const REACTIONS = ['fire', 'clap', 'scream', 'joy', 'money', 'mindblown', 'skull', 'pray'];
@@ -158,6 +160,7 @@ export class Room {
     this.pausedRemaining = 0;
     this.log = [];
     this.chat = []; // last 60 messages
+    this.trades = []; // post-auction trade offers
     this.seed = Math.floor(Math.random() * 2 ** 31);
     this.rnd = mulberry32(this.seed);
     this.version = 0;
@@ -258,6 +261,7 @@ export class Room {
     if (patch.bidTime != null) s.bidTime = clamp(patch.bidTime, 5, 30);
     if (patch.pool != null && POOL_SIZES[patch.pool] !== undefined) s.pool = patch.pool;
     if (patch.unsoldRound != null) s.unsoldRound = !!patch.unsoldRound;
+    if (patch.trading != null) s.trading = !!patch.trading;
     if (patch.cpuLevel != null && CPU_LEVELS[patch.cpuLevel]) s.cpuLevel = patch.cpuLevel;
     if (patch.roleMin && typeof patch.roleMin === 'object') {
       const rm = { ...s.roleMin };
@@ -467,6 +471,7 @@ export class Room {
     this.lot = null;
     this.paused = false;
     this.log = [];
+    this.trades = [];
     this.seed = Math.floor(Math.random() * 2 ** 31);
     this.rnd = mulberry32(this.seed);
     this.botPlans = {};
@@ -520,6 +525,125 @@ export class Room {
     this.lot = null;
     this.paused = false;
     this.addLog({ kind: 'info', text: 'Auction complete' });
+  }
+
+  // ---------- post-auction trading ----------
+  // A trade: `from` gives `give` (+ cash if > 0) to `to` and receives `get` (+ |cash| if < 0).
+  tradeTeams(memberId) {
+    if (this.phase !== 'results') throw new Error('Trading opens after the auction');
+    if (this.settings.trading === false) throw new Error('Trading is turned off in this room');
+    const m = this.members.get(memberId);
+    const team = m && this.teams[m.team];
+    if (!team) throw new Error('You have no squad');
+    return team;
+  }
+
+  // Squads and purses after the trade, or a reason it can't happen
+  tradeProblem(tr) {
+    const a = this.teams[tr.from], b = this.teams[tr.to];
+    if (!a || !b) return 'That team is gone';
+    const aIds = new Set(a.squad.map((x) => x.id)), bIds = new Set(b.squad.map((x) => x.id));
+    if (!tr.give.every((id) => aIds.has(id))) return `${tr.from} no longer has every player in this deal`;
+    if (!tr.get.every((id) => bIds.has(id))) return `${tr.to} no longer has every player in this deal`;
+    const { maxSquad, maxOverseas, minSquad } = this.settings;
+    const check = (t, out, inn, cashOut) => {
+      const size = t.squad.length - out.length + inn.length;
+      if (size > maxSquad) return `${t.code} would have ${size} players (max ${maxSquad})`;
+      if (size < Math.min(minSquad, t.squad.length)) return `${t.code} would drop below ${Math.min(minSquad, t.squad.length)} players`;
+      const os = t.squad.filter((x) => !out.includes(x.id) && PLAYER_BY_ID.get(x.id).overseas).length + inn.filter((id) => PLAYER_BY_ID.get(id).overseas).length;
+      if (os > maxOverseas) return `${t.code} would have ${os} overseas players (max ${maxOverseas})`;
+      if (t.purse - cashOut < 0) return `${t.code} can't afford ${lakhsText(cashOut)}`;
+      return null;
+    };
+    return check(a, tr.give, tr.get, Math.max(0, tr.cash)) || check(b, tr.get, tr.give, Math.max(0, -tr.cash));
+  }
+
+  proposeTrade(memberId, { to, give, get, cash } = {}, now = Date.now()) {
+    const from = this.tradeTeams(memberId);
+    const other = this.teams[to];
+    if (!other || other.code === from.code) throw new Error('Pick another team to trade with');
+    const ids = (v) => [...new Set((Array.isArray(v) ? v : []).map(Number))].slice(0, 6);
+    const tr = { id: `${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`, from: from.code, to: other.code, give: ids(give), get: ids(get), cash: Math.round(Number(cash) || 0), status: 'open', t: now, note: null };
+    if (tr.cash % 5) throw new Error('Cash must be in steps of ₹5 L');
+    if (!tr.give.length && !tr.get.length) throw new Error('Add at least one player');
+    if (!tr.give.length && tr.cash <= 0) throw new Error("Offer a player or cash for what you're asking");
+    if (!tr.get.length && tr.cash >= 0) throw new Error('Ask for a player or cash in return');
+    const problem = this.tradeProblem(tr);
+    if (problem) throw new Error(problem);
+    const open = this.trades.filter((x) => x.status === 'open' && x.from === from.code);
+    if (open.length >= MAX_OPEN_TRADES) throw new Error(`You already have ${MAX_OPEN_TRADES} offers waiting`);
+    if (open.some((x) => x.to === tr.to && same(x.give, tr.give) && same(x.get, tr.get) && x.cash === tr.cash)) throw new Error('You already sent this offer');
+    this.trades.push(tr);
+    if (this.trades.length > 80) this.trades.splice(0, this.trades.length - 80);
+    // computer teams answer straight away
+    if (this.members.get(other.ownerId)?.bot) {
+      if (this.botLikesTrade(tr)) this.applyTrade(tr, now);
+      else { tr.status = 'rejected'; tr.note = 'Not enough value for us'; }
+    }
+    return { trade: tr };
+  }
+
+  respondTrade(memberId, id, accept, now = Date.now()) {
+    const team = this.tradeTeams(memberId);
+    const tr = this.trades.find((x) => x.id === id);
+    if (!tr || tr.status !== 'open') throw new Error('This offer is no longer open');
+    if (tr.to !== team.code) throw new Error('Only the other team can answer this offer');
+    if (!accept) { tr.status = 'rejected'; return { trade: tr }; }
+    this.applyTrade(tr, now);
+    return { trade: tr };
+  }
+
+  cancelTrade(memberId, id) {
+    const team = this.tradeTeams(memberId);
+    const tr = this.trades.find((x) => x.id === id);
+    if (!tr || tr.status !== 'open') throw new Error('This offer is no longer open');
+    if (tr.from !== team.code) throw new Error('Only the team that sent it can cancel');
+    tr.status = 'cancelled';
+  }
+
+  applyTrade(tr, now = Date.now()) {
+    const problem = this.tradeProblem(tr);
+    if (problem) { tr.status = 'failed'; tr.note = problem; throw new Error(problem); }
+    const a = this.teams[tr.from], b = this.teams[tr.to];
+    const move = (src, dst, ids) => {
+      for (const id of ids) {
+        const i = src.squad.findIndex((x) => x.id === id);
+        const [entry] = src.squad.splice(i, 1);
+        dst.squad.push({ id: entry.id, price: entry.price, role: bestRoleFor(dst.squad, PLAYER_BY_ID.get(id), this.settings.roleMin) });
+      }
+    };
+    move(a, b, tr.give);
+    move(b, a, tr.get);
+    a.purse -= tr.cash; b.purse += tr.cash;
+    for (const t of [a, b]) {
+      const bot = this.members.get(t.ownerId)?.bot;
+      if (bot) { t.xi = autoXI(t.squad, PLAYER_BY_ID); t.xiLocked = true; continue; }
+      const own = new Set(t.squad.map((x) => x.id));
+      // a player who left breaks the XI: drop him and unlock so the owner refills the slot
+      if (t.xi && t.xi.some((id) => !own.has(id))) { t.xi = t.xi.filter((id) => own.has(id)); t.xiLocked = false; }
+    }
+    tr.status = 'accepted';
+    tr.done = now;
+    // other open offers that relied on these players are dead now
+    const moved = new Set([...tr.give, ...tr.get]);
+    for (const x of this.trades) {
+      if (x === tr || x.status !== 'open') continue;
+      if ([...x.give, ...x.get].some((id) => moved.has(id)) || this.tradeProblem(x)) { x.status = 'failed'; x.note = 'Squads changed after another trade'; }
+    }
+    const names = (ids) => ids.map((id) => PLAYER_BY_ID.get(id).name).join(', ');
+    const part = (ids, cash) => [ids.length ? names(ids) : '', cash > 0 ? lakhsText(cash) : ''].filter(Boolean).join(' + ');
+    this.addLog({ kind: 'info', text: `Trade: ${tr.from} sends ${part(tr.give, tr.cash) || 'nothing'} to ${tr.to} for ${part(tr.get, -tr.cash) || 'nothing'}` });
+  }
+
+  // Computer teams accept when their best XI plus cash comes out ahead
+  botLikesTrade(tr) {
+    const bot = this.teams[tr.to];
+    const before = xiInfo(autoXI(bot.squad, PLAYER_BY_ID), bot.squad, PLAYER_BY_ID).rating;
+    const after = bot.squad.filter((x) => !tr.get.includes(x.id)).concat(tr.give.map((id) => ({ id, price: 0 })));
+    const afterRating = xiInfo(autoXI(after, PLAYER_BY_ID), after, PLAYER_BY_ID).rating;
+    // ₹2 Cr of cash is worth about one point of XI rating; they want a small edge
+    const edge = { easy: -0.2, medium: 0.3, hard: 0.8 }[this.settings.cpuLevel] ?? 0.3;
+    return afterRating - before + tr.cash / 200 >= edge;
   }
 
   // Called ~4x/sec. Returns true when state changed and should be broadcast.
@@ -644,11 +768,14 @@ export class Room {
       upcoming,
       log: this.log.slice(-25),
       chat: this.chat.slice(-60),
+      trades: this.trades.slice(-40),
       serverNow: now,
       nextLotAt: this.nextLotAt,
     };
   }
 }
+
+const same = (x, y) => x.length === y.length && x.every((v) => y.includes(v));
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export function makeCode(existing) {

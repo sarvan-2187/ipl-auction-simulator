@@ -76,6 +76,7 @@ When the auction ends, every owner arranges a Playing XI on a cricket ground, ge
 - All ten franchises with their names, colours and logos.
 - Computer players (Computer A, Computer B and so on) fill any empty franchise and bid sensibly for the roles they need.
 - Room chat: text chat in the lobby, during the auction and on the results screen, with quick replies, unread badges and spam protection.
+- Optional trading window after the auction (host toggles it in room settings): offer players and cash to any team, the other owner accepts or declines, and computer teams answer instantly based on how the deal changes their XI.
 - Up to 10 spectators per room on top of the 10 team owners. Spectators send emoji reactions that float over the stage, limited per person and per room so they never flood the screen.
 - The host can hand over host controls to anyone in the room, in the lobby, mid-auction or on the results screen.
 - Refreshing or dropping connection puts you straight back in your seat. Leaving a lobby frees your franchise; if the host leaves, hosting passes on.

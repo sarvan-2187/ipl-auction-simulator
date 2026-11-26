@@ -216,3 +216,42 @@ test('spectators: up to 10 watchers, reactions rate-limited, host transfer', () 
   assert.throws(() => r.transferHost('s5', 'f'), /offline/);
   r.addBot('s5', 'RCB'); assert.throws(() => r.transferHost('s5', 'bot-RCB'), /person/);
 });
+
+test('post-auction trading: offers, accept, cash, limits, computer replies', () => {
+  const r = new Room('TRADE', 'h');
+  r.join('h', 'Host'); r.pickTeam('h', 'CSK'); r.join('f', 'F'); r.pickTeam('f', 'MI'); r.addBot('h', 'RCB');
+  r.start('h', 0);
+  assert.throws(() => r.proposeTrade('h', { to: 'MI', give: [], get: [] }), /after the auction/);
+  r.devFillAndFinish();
+  const csk = r.teams.CSK, mi = r.teams.MI, rcb = r.teams.RCB;
+  const indian = (t) => t.squad.find((x) => !PLAYER_BY_ID.get(x.id).overseas);
+  const a1 = indian(csk), b1 = indian(mi);
+  csk.xi = csk.squad.slice(0, 11).map((x) => x.id); csk.xiLocked = true;
+  const before = { csk: csk.purse, mi: mi.purse };
+  const { trade } = r.proposeTrade('h', { to: 'MI', give: [a1.id], get: [b1.id], cash: 100 });
+  assert.throws(() => r.respondTrade('h', trade.id, true), /other team/);
+  r.respondTrade('f', trade.id, true);
+  assert.equal(trade.status, 'accepted');
+  assert.ok(mi.squad.some((x) => x.id === a1.id) && csk.squad.some((x) => x.id === b1.id));
+  assert.equal(csk.purse, before.csk - 100); assert.equal(mi.purse, before.mi + 100);
+  assert.equal(csk.xiLocked, false); assert.ok(!csk.xi.includes(a1.id));
+  // stale offer: a player already moved
+  const t2 = r.proposeTrade('h', { to: 'MI', give: [b1.id], get: [], cash: -5 }).trade;
+  r.proposeTrade('f', { to: 'CSK', give: [], get: [b1.id], cash: 50 });
+  r.respondTrade('h', r.trades.at(-1).id, true);
+  assert.equal(t2.status, 'failed');
+  // limits
+  assert.throws(() => r.proposeTrade('h', { to: 'MI', give: [], get: [], cash: 50 }), /at least one player/);
+  assert.throws(() => r.proposeTrade('h', { to: 'MI', give: [csk.squad[0].id], get: [], cash: 99995 }), /Ask/);
+  assert.throws(() => r.proposeTrade('h', { to: 'MI', get: [mi.squad[0].id], cash: csk.purse + 5 }), /afford/);
+  // a computer team won't give away its best player for nothing, but sells a bench player for cash
+  const star = rcb.squad.slice().sort((x, y) => PLAYER_BY_ID.get(y.id).rating - PLAYER_BY_ID.get(x.id).rating)[0];
+  assert.equal(r.proposeTrade('h', { to: 'RCB', give: [csk.squad.at(-1).id], get: [star.id] }).trade.status, 'rejected');
+  const bench = rcb.squad.find((x) => !rcb.xi.includes(x.id));
+  assert.equal(r.proposeTrade('h', { to: 'RCB', get: [bench.id], cash: 200 }).trade.status, 'accepted');
+  assert.ok(rcb.xiLocked && rcb.xi.length === 11);
+  // switched off
+  const off = new Room('TOFF', 'h'); off.join('h', 'H'); off.pickTeam('h', 'CSK'); off.addBot('h', 'MI');
+  off.updateSettings('h', { trading: false }); off.start('h', 0); off.devFillAndFinish();
+  assert.throws(() => off.proposeTrade('h', { to: 'MI', get: [off.teams.MI.squad[0].id], cash: 50 }), /turned off/);
+});

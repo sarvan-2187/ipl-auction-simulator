@@ -53,6 +53,12 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
     return () => window.removeEventListener('keydown', k);
   }, []);
 
+  // a traded-away player leaves the XI
+  useEffect(() => {
+    const own = new Set(squad.map((x) => x.id));
+    setIds((v) => (v.every((id) => own.has(id)) ? v : v.filter((id) => own.has(id))));
+  }, [squad]);
+
   // follow server updates when viewing someone else's XI / after locking
   useEffect(() => { if (!editable) setIds(team.xi ?? []); }, [team.xi, editable]);
 

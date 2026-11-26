@@ -178,6 +178,9 @@ io.on('connection', (socket) => {
   act('setRole', ({ id, role }) => room.setRole(memberId, id, role));
   act('setXI', ({ ids, lock }) => room.setXI(memberId, ids, !!lock));
   act('chat', ({ text }) => { room.addChat(memberId, text); });
+  act('proposeTrade', (offer) => room.proposeTrade(memberId, offer));
+  act('respondTrade', ({ id, accept }) => room.respondTrade(memberId, id, !!accept));
+  act('cancelTrade', ({ id }) => room.cancelTrade(memberId, id));
   act('transferHost', ({ to }) => room.transferHost(memberId, to));
   // reactions are broadcast as events, not stored in room state
   socket.on('react', ({ key } = {}, cb) => {

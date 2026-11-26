@@ -10,6 +10,7 @@ import { Face, TeamLogo, teamVars, useToast } from '../components/ui';
 import SquadDrawer from '../components/SquadDrawer';
 import { RoleRules, rulesMet } from '../components/RoleRules';
 import XIBuilder from '../components/XIBuilder';
+import TradeCenter, { TradeButton, useTradeAlerts } from '../components/TradeCenter';
 import { autoXI, roleIn, xiInfo } from '../lib/xi';
 import { ratingAs } from '../lib/data';
 
@@ -17,7 +18,10 @@ export default function Results({ room }: { room: RoomState }) {
   const toast = useToast();
   const [drawer, setDrawer] = useState<string | null>(null);
   const [viewXI, setViewXI] = useState<string | null>(null);
+  const [trading, setTrading] = useState(false);
   const myTeam = Object.values(room.teams).find((t) => t.ownerId === memberId);
+  useTradeAlerts(room, myTeam);
+  const trades = trading && myTeam ? <TradeCenter room={room} team={myTeam} onClose={() => setTrading(false)} /> : null;
   // straight to the XI builder after the auction until you've locked your XI
   const [mode, setMode] = useState<'xi' | 'results'>(() => (myTeam && !myTeam.xiLocked && myTeam.squad.length ? 'xi' : 'results'));
   // Standings use each team's Playing XI (locked or in progress); teams with nothing picked show their best possible XI
@@ -82,9 +86,13 @@ export default function Results({ room }: { room: RoomState }) {
             <div className="eyebrow">Room {room.code} · Auction complete</div>
             <div className="display" style={{ fontSize: 30 }}>Build your Playing XI</div>
           </div>
-          <button className="btn btn-sm" onClick={() => setMode('results')}>See results →</button>
+          <div className="row" style={{ gap: 8 }}>
+            <TradeButton room={room} team={myTeam} onOpen={() => setTrading(true)} className="btn btn-sm" />
+            <button className="btn btn-sm" onClick={() => setMode('results')}>See results →</button>
+          </div>
         </div>
         <XIBuilder room={room} team={myTeam} onDone={() => setMode('results')} />
+        {trades}
         <Chat room={room} />
       </div>
     );
@@ -106,6 +114,7 @@ export default function Results({ room }: { room: RoomState }) {
         )}
         <div className="row" style={{ justifyContent: 'center', marginTop: 18, flexWrap: 'wrap' }}>
           {myTeam && <button className="btn btn-gold" onClick={() => setMode('xi')}>{myTeam.xiLocked ? 'My Playing XI' : 'Pick my Playing XI'}</button>}
+          <TradeButton room={room} team={myTeam} onOpen={() => setTrading(true)} />
           <button className="btn" onClick={copy}>Copy squads for WhatsApp</button>
           {isHost ? (
             <button className="btn" onClick={rematch}>Play again · same room</button>
@@ -168,6 +177,7 @@ export default function Results({ room }: { room: RoomState }) {
           );
         })}
       </div>
+      {trades}
       {drawer && <SquadDrawer room={room} code={drawer} onClose={() => setDrawer(null)} />}
       {viewXI && room.teams[viewXI] && (
         <>

@@ -77,6 +77,7 @@ export interface Settings {
   unsoldRound: boolean;
   roleMin: Record<Role, number>;
   cpuLevel?: 'easy' | 'medium' | 'hard';
+  trading?: boolean;
 }
 
 export interface LogEntry {
@@ -102,9 +103,23 @@ export interface RoomState {
   upcoming: number[];
   log: LogEntry[];
   chat?: ChatMsg[];
+  trades?: Trade[];
   serverNow: number;
   nextLotAt: number;
   receivedAt: number; // client-side performance.now() when this state arrived
 }
 
 export interface ChatMsg { id: string; t: number; from: string; name: string; team: string | null; text: string }
+
+// Post-auction trade: `from` sends `give` (+ cash when > 0) to `to` for `get` (+ |cash| when < 0)
+export interface Trade {
+  id: string;
+  from: string;
+  to: string;
+  give: number[];
+  get: number[];
+  cash: number;
+  status: 'open' | 'accepted' | 'rejected' | 'cancelled' | 'failed';
+  t: number;
+  note: string | null;
+}

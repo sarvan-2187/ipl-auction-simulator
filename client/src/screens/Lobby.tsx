@@ -172,6 +172,15 @@ export default function Lobby({ room }: { room: RoomState }) {
                 </div>
               ) : <b>{s.unsoldRound ? 'On' : 'Off'}</b>}
             </div>
+            <div className="setting">
+              <label>Trading window<small>After the auction, owners can swap players and cash before locking their XI</small></label>
+              {isHost ? (
+                <div className="seg" style={{ width: 140 }}>
+                  <button className={s.trading !== false ? 'on' : ''} onClick={() => set({ trading: true })}>On</button>
+                  <button className={s.trading === false ? 'on' : ''} onClick={() => set({ trading: false })}>Off</button>
+                </div>
+              ) : <b>{s.trading !== false ? 'On' : 'Off'}</b>}
+            </div>
           </div>
         </div>
 
