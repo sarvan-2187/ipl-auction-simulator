@@ -1,5 +1,6 @@
 import express from 'express';
 import compression from 'compression';
+import fs from 'node:fs';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -51,6 +52,31 @@ if (process.env.DEV_TOOLS === '1') {
   });
 }
 app.all('/api/*', (_req, res) => res.status(404).json({ status: 'error', error: 'Not found' }));
+// Room links get invite-specific link previews (WhatsApp, Discord, X read these tags)
+let indexHtml = null;
+const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]);
+app.get('/room/:code', (req, res, next) => {
+  try { indexHtml = indexHtml || fs.readFileSync(path.join(DIST, 'index.html'), 'utf8'); } catch { return next(); }
+  const code = String(req.params.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  const r = rooms.get(code);
+  const host = r?.members.get(r.hostId)?.name;
+  const taken = r ? [...r.members.values()].filter((m) => m.team).length : 0;
+  const title = host ? `${host} invited you to an IPL auction` : 'Join my IPL auction';
+  const desc = r
+    ? `Room ${code} · ${taken}/10 franchises taken. Pick a team, bid live and build your Playing XI. Free, no sign-up.`
+    : `Room ${code}. Pick a franchise, bid live against your friends and build your Playing XI. Free, no sign-up.`;
+  const origin = `${req.protocol}://${req.get('host')}`;
+  const html = indexHtml
+    .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)} · Room ${code}</title>`)
+    .replace(/(property="og:title" content=")[^"]*/, `$1${esc(title)}`)
+    .replace(/(name="twitter:title" content=")[^"]*/, `$1${esc(title)}`)
+    .replace(/(property="og:description" content=")[^"]*/, `$1${esc(desc)}`)
+    .replace(/(name="twitter:description" content=")[^"]*/, `$1${esc(desc)}`)
+    .replace(/(name="description" content=")[^"]*/, `$1${esc(desc)}`)
+    .replace(/(property="og:url" content=")[^"]*/, `$1${origin}/room/${code}`)
+    .replace(/https:\/\/ipl-auction-bbho\.onrender\.com\/og\.jpg/g, `${origin}/og-invite.jpg`);
+  res.set('Cache-Control', 'no-store').type('html').send(html);
+});
 app.get('*', (_req, res) => res.sendFile(path.join(DIST, 'index.html'), (err) => err && res.status(404).send('Run "npm run build" first, or use "npm run dev".')));
 
 const server = http.createServer(app);

@@ -93,6 +93,10 @@ When the auction ends, every owner arranges a Playing XI on a cricket ground, ge
 - Share your Playing XI or your full squad as a 1080 x 1350 image, ready for Instagram or WhatsApp.
 - Copy every squad as text for a group chat, and play again in the same room with the same friends.
 
+**Sharing and install**
+- Rich link previews: the site shares with a designed 1200 x 630 card, and room links preview as a personal invite ("Sarvan invited you to an IPL auction · Room ABCDE") with live franchise count.
+- Installable on phones: add to the home screen for a full-screen app with its own icon.
+
 ## How a game works
 
 1. **Create a room.** The host enters a name and creates a room. The room code appears at the top of the lobby.
