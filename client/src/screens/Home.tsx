@@ -118,22 +118,13 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
 
       <footer className="site-foot">
         <div className="disclaimer">
-          <div className="d-col">
-            <b>Fan-made, just for fun</b>
-            <p>A private, non-commercial auction game for friends. Not affiliated with, endorsed or sponsored by the Indian Premier League, the BCCI or any franchise.</p>
-          </div>
-          <div className="d-col">
-            <b>Names, logos and photos</b>
-            <p>Team names, logos and player photos are the property of their respective owners and are used here for identification only.</p>
-          </div>
-          <div className="d-col">
-            <b>Ratings and prices</b>
-            <p>Player ratings and base prices are estimates built from public IPL stats. They are not official valuations.</p>
-          </div>
-          <div className="d-col">
-            <b>No real money</b>
-            <p>All purses and bids are virtual. There is no betting, payment or prize of any kind.</p>
-          </div>
+          {DISCLAIMERS.map((d) => (
+            <div key={d.t} className="d-card">
+              <span className="d-icon" aria-hidden="true">{d.icon}</span>
+              <b>{d.t}</b>
+              <p>{d.d}</p>
+            </div>
+          ))}
         </div>
         <div className="credits">
           Type: <b>Geist</b> by <a href="https://vercel.com/font" target="_blank" rel="noreferrer">Vercel</a> · <b>NType 82</b> serif by <a href="https://nothing.tech" target="_blank" rel="noreferrer">Nothing</a> · Flags by flag-icons · Emoji by Microsoft Fluent
@@ -385,4 +376,11 @@ const FEATURES = [
   { t: 'Spectators', d: 'Up to 10 friends can watch and throw emoji reactions, rate-limited so nobody floods the stage.', icon: ic('M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 100 6 3 3 0 000-6z') },
   { t: 'Room chat', d: 'Banter in the room while the bidding is on, with quick replies built in.', icon: ic('M4 5h16v11H8l-4 4V5z') },
   { t: 'Share cards', d: 'Export your XI or full squad as an image for WhatsApp and Instagram.', icon: ic('M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 002 2h10a2 2 0 002-2v-5') },
+];
+
+const DISCLAIMERS = [
+  { t: 'Fan-made', d: 'Not affiliated with the IPL, the BCCI or any franchise.', icon: ic('M12 21s-7-4.4-9.3-9A5.3 5.3 0 0112 6.2 5.3 5.3 0 0121.3 12C19 16.6 12 21 12 21z') },
+  { t: 'Logos & photos', d: 'Belong to their owners. Used only to identify teams and players.', icon: ic('M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01') },
+  { t: 'Ratings', d: 'Estimates from public IPL stats, not official values.', icon: ic('M4 20V10M10 20V4M16 20v-7M22 20H2') },
+  { t: 'No real money', d: 'Virtual purses only. No betting, payments or prizes.', icon: ic('M12 3v18M17 7H9.5a3 3 0 000 6h5a3 3 0 010 6H6') },
 ];
