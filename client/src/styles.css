@@ -1599,3 +1599,37 @@ body { font-feature-settings: 'ss01' off; }
 
 /* landing demo: the SOLD ticket gets a solid backdrop so the player and bid underneath never show through */
 .demo .ceremony { background: radial-gradient(closest-side, rgba(4, 14, 8, 0.98), rgba(4, 14, 8, 0.94)); border-radius: 26px; }
+
+/* desktop hero: one centred column, pill controls, no card boxes */
+@media (min-width: 1025px) {
+  .lp-hero { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 28px; padding: 48px 0 84px; align-content: center; }
+  .lp-hero-copy { justify-items: center; width: 100%; max-width: 640px; }
+  .lp-hero .hero-title { font-size: clamp(72px, 8vw, 112px); line-height: 0.95; }
+  .lp-hero .hero-title { white-space: nowrap; }
+  .lp-hero .hero-title .gold-grad { display: inline-block; margin-left: 0.2em; }
+  .lp-hero .hero-title br { display: none; }
+  .lp-hero .hero-sub { max-width: 520px; }
+  .lp-hero .home-card { background: none; border: 0; box-shadow: none; backdrop-filter: none; padding: 0; margin: 6px 0 0; width: 100%; max-width: 460px; }
+  .lp-hero .home-card .tabs, .lp-hero .home-card .seg { border-radius: 999px; }
+  .lp-hero .home-card .tabs button { border-radius: 999px; }
+  .lp-hero .home-card .eyebrow { display: none; }
+  .lp-hero .home-card .input { border-radius: 999px; height: 54px; text-align: center; padding: 0 22px; }
+  .lp-hero .home-card .home-go { border-radius: 999px; }
+  .lp-hero .home-note { text-align: center; }
+  /* live auction as a slim pill */
+  .lp-hero-demo { max-width: 640px; }
+  .lp-hero .demo { display: flex; align-items: center; gap: 18px; padding: 10px 14px 10px 10px; border-radius: 999px; min-height: 0; }
+  .lp-hero .demo > .demo-art, .lp-hero .demo > .demo-feed, .lp-hero .demo > .demo-top { display: none; }
+  .lp-hero .demo .demo-player { flex: 1; min-width: 0; flex-direction: row; align-items: center; gap: 14px; height: auto; }
+  .lp-hero .demo .demo-player img { width: 64px; height: 64px; margin: 0; border-radius: 50%; object-fit: cover; object-position: top; background: rgba(255,255,255,0.12); filter: none; flex: none; }
+  .lp-hero .demo .demo-player .demo-name { padding: 0; text-align: left; min-width: 0; }
+  .lp-hero .demo .demo-name .pn { font-size: 24px; }
+  .lp-hero .demo > .demo-bid { flex: none; padding: 6px 8px 6px 20px; border-radius: 999px; gap: 18px; }
+  .lp-hero .demo .demo-bid b { font-size: 28px; }
+  .lp-hero .demo .demo-leader { font-size: 12px; }
+  .lp-hero .demo .demo-clock { width: 48px; height: 48px; font-size: 22px; }
+  /* the SOLD ticket pops out over the pill */
+  .lp-hero .demo .ceremony { inset: 0; border-radius: 999px; }
+  .lp-hero .demo .ceremony .ticket-wrap { zoom: 0.33; }
+  .lp-hero .demo .ceremony .c-gavel, .lp-hero .demo .ceremony .c-badges, .lp-hero .demo .ceremony .c-mine { display: none; }
+}
