@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { confirmDialog } from '../components/ConfirmDialog';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Page, PageTabs, usePhone } from '../components/Pager';
 import Chat from '../components/Chat';
@@ -200,7 +201,7 @@ export default function Lobby({ room }: { room: RoomState }) {
                       </div>
                       <span className={`dot ${m.connected ? '' : 'off'}`} title={m.connected ? 'Online' : 'Offline'} />
                       {isHost && m.id !== memberId && !m.bot && m.connected && m.team && (
-                        <button className="btn btn-sm make-host" onClick={() => { if (confirm(`Make ${m.name} the host? You'll lose the host controls.`)) act('transferHost', { to: m.id }); }} title={`Make ${m.name} the host`}>Make host</button>
+                        <button className="btn btn-sm make-host" onClick={async () => { if (await confirmDialog({ title: `Make ${m.name} the host?`, body: "You'll lose the host controls.", ok: 'Make host' })) act('transferHost', { to: m.id }); }} title={`Make ${m.name} the host`}>Make host</button>
                       )}
                       {isHost && m.id !== memberId && (
                         <button className="icon-btn" style={{ width: 30, height: 30, fontSize: 14 }} onClick={() => act('removeMember', { id: m.id })} aria-label={`Remove ${m.name}`}>✕</button>

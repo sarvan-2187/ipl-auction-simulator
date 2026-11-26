@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { confirmDialog } from '../components/ConfirmDialog';
 import Chat from '../components/Chat';
 import { ReactionBar, ReactionLayer } from '../components/Reactions';
 import HostTransfer from '../components/HostTransfer';
@@ -155,7 +156,7 @@ export default function Auction({ room }: { room: RoomState }) {
   }, [myTeam, lot]);
 
   const host = async (action: string) => {
-    if (action === 'end' && !confirm('End the auction now? Remaining players stay unsold.')) return;
+    if (action === 'end' && !(await confirmDialog({ title: 'End the auction now?', body: 'Remaining players stay unsold.', ok: 'End auction', danger: true }))) return;
     const r = await call('host', { action });
     if (!r.ok) toast(r.error || 'Failed', true);
   };
@@ -364,7 +365,7 @@ function DoneBuying({ room, team }: { room: RoomState; team: TeamState }) {
     );
   }
   const stop = async () => {
-    if (!confirm(`Stop buying with ${team.squad.length} players? You can't bid again in this auction.${waitingOn.length ? '' : ' Computers will finish the remaining players instantly.'}`)) return;
+    if (!(await confirmDialog({ title: `Stop buying with ${team.squad.length} players?`, body: `You can't bid again in this auction.${waitingOn.length ? '' : ' Computers will finish the remaining players instantly.'}`, ok: 'Stop buying' }))) return;
     const r = await call('doneBuying');
     if (!r.ok) toast(r.error || 'Failed', true);
   };

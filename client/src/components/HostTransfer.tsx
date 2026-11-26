@@ -1,4 +1,5 @@
 // Host hands over control to another person in the room.
+import { confirmDialog } from './ConfirmDialog';
 import { useEffect, useRef, useState } from 'react';
 import { call, memberId } from '../lib/socket';
 import type { RoomState } from '../lib/types';
@@ -17,7 +18,7 @@ export default function HostTransfer({ room, compact = false }: { room: RoomStat
   }, [open]);
   if (room.hostId !== memberId || !people.length) return null;
   const give = async (id: string, name: string) => {
-    if (!confirm(`Make ${name} the host? You'll lose the host controls.`)) return;
+    if (!(await confirmDialog({ title: `Make ${name} the host?`, body: "You'll lose the host controls.", ok: 'Make host' }))) return;
     const r = await call('transferHost', { to: id });
     setOpen(false);
     toast(r.ok ? `${name} is now the host` : r.error || 'Could not transfer', !r.ok);

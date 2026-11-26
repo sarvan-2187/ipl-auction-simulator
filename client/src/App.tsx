@@ -3,6 +3,7 @@ import { loadData } from './lib/data';
 import { useRoom, useConnected, joinRoom, getName } from './lib/socket';
 import { ToastProvider } from './components/ui';
 import ConnToast from './components/ConnToast';
+import { ConfirmHost } from './components/ConfirmDialog';
 import Home from './screens/Home';
 import Lobby from './screens/Lobby';
 import Auction from './screens/Auction';
@@ -58,6 +59,7 @@ export default function App() {
       </div>
       <div className="grain" aria-hidden="true" />
       <ConnToast connected={connected} />
+      <ConfirmHost />
       {!ready ? (
         <div className="home"><div className="eyebrow">Loading auction room…</div></div>
       ) : !room ? (
