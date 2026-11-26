@@ -83,10 +83,19 @@ app.get('/room/:code', (req, res, next) => {
     .replace(/(name="twitter:description" content=")[^"]*/, `$1${esc(desc)}`)
     .replace(/(name="description" content=")[^"]*/, `$1${esc(desc)}`)
     .replace(/(property="og:url" content=")[^"]*/, `$1${origin}/room/${code}`)
-    .replace(/https:\/\/ipl\.sarvankumar\.in\/og\.jpg/g, `${origin}/og-invite.jpg`);
+    .replace(/https:\/\/ipl\.sarvankumar\.in\/og\.jpg/g, `${origin}/og-invite.jpg`)
+    .replace(/https:\/\/ipl\.sarvankumar\.in/g, origin);
   res.set('Cache-Control', 'no-store').type('html').send(html);
 });
-app.get('*', (_req, res) => res.sendFile(path.join(DIST, 'index.html'), (err) => err && res.status(404).send('Run "npm run build" first, or use "npm run dev".')));
+app.get('*', (req, res) => {
+  try { indexHtml = indexHtml || fs.readFileSync(path.join(DIST, 'index.html'), 'utf8'); }
+  catch { return res.status(404).send('Run "npm run build" first, or use "npm run dev".'); }
+  // absolute URLs in the meta tags follow whichever address the visitor used (onrender.com or the custom domain)
+  const origin = `${req.protocol}://${req.get('host')}`;
+  // canonical stays on the custom domain so search engines treat both addresses as one site
+  const html = indexHtml.replace(/https:\/\/ipl\.sarvankumar\.in(?![^"]*" \/>\s*\n\s*<!-- Open Graph)/g, origin);
+  res.set('Cache-Control', 'no-cache').type('html').send(html.replace(/(rel="canonical" href=")[^"]*/, '$1https://ipl.sarvankumar.in/'));
+});
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: true } });
@@ -169,6 +178,13 @@ io.on('connection', (socket) => {
   act('setRole', ({ id, role }) => room.setRole(memberId, id, role));
   act('setXI', ({ ids, lock }) => room.setXI(memberId, ids, !!lock));
   act('chat', ({ text }) => { room.addChat(memberId, text); });
+  act('transferHost', ({ to }) => room.transferHost(memberId, to));
+  // reactions are broadcast as events, not stored in room state
+  socket.on('react', ({ key } = {}, cb) => {
+    if (!room) return cb?.({ ok: false, error: 'Not in a room' });
+    try { const r = room.react(memberId, key); io.to(room.code).emit('reaction', r); cb?.({ ok: true }); }
+    catch (e) { cb?.({ ok: false, error: e.message }); }
+  });
   act('rename', ({ name }) => {
     const m = room.members.get(memberId);
     if (m && name) m.name = String(name).slice(0, 18);

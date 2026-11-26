@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Chat from '../components/Chat';
+import { ReactionBar, ReactionLayer } from '../components/Reactions';
+import HostTransfer from '../components/HostTransfer';
 import { AnimatePresence, motion } from 'framer-motion';
 import SoldCeremony, { type CeremonyTags } from '../components/SoldCeremony';
 import { bestRoleFor, ratingAs, roleCounts, unmet, ROLES, getPlayer, getTeam, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
@@ -190,9 +192,11 @@ export default function Auction({ room }: { room: RoomState }) {
         {isHost && (
           <div className="row" style={{ gap: 6 }}>
             <button className="btn btn-sm" onClick={() => host(room.paused ? 'resume' : 'pause')}>{room.paused ? 'Resume' : 'Pause'}</button>
+            <HostTransfer room={room} compact />
             <button className="btn btn-sm btn-danger" onClick={() => host('end')}>End</button>
           </div>
         )}
+        <span className="chip watch-chip" title="People watching">{room.members.filter((m) => !m.bot && !m.team && m.connected).length} watching</span>
       </div>
 
       <div className="a-grid">
@@ -265,8 +269,8 @@ export default function Auction({ room }: { room: RoomState }) {
               </div>
             </div>
           ) : (
-            <div className="panel controls" style={{ gridTemplateColumns: '1fr', textAlign: 'center' }}>
-              <div className="muted" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, padding: 10 }}>You're spectating this auction</div>
+            <div className="panel controls spectator">
+              <ReactionBar />
             </div>
           )}
 
@@ -282,6 +286,7 @@ export default function Auction({ room }: { room: RoomState }) {
       </div>
 
 
+      <ReactionLayer />
       <Chat room={room} raised />
       {drawer && room.teams[drawer] && <SquadDrawer room={room} code={drawer} onClose={() => setDrawer(null)} />}
     </div>

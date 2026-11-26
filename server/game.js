@@ -19,6 +19,8 @@ export const DEFAULT_SETTINGS = {
   roleMin: { BAT: 3, BOWL: 4, AR: 2, WK: 2 }, // squad rules
 };
 export const ROLES = ['BAT', 'BOWL', 'AR', 'WK'];
+export const MAX_SPECTATORS = 10;
+export const REACTIONS = ['wow', 'steal', 'overpaid', 'bid', 'unlucky', 'bravo'];
 // How computer players behave at each difficulty
 export const CPU_LEVELS = {
   // easy: drop out early, often let humans have players cheaply, slow to react, rarely jump-bid
@@ -172,13 +174,40 @@ export class Room {
   join(memberId, name) {
     const ex = this.members.get(memberId);
     if (ex) { ex.connected = true; if (name) ex.name = name; return ex; }
-    if (this.phase !== 'lobby' && this.humanCount() >= 10) throw new Error('Room is full');
+    // up to 10 spectators (people without a franchise), in addition to the 10 team owners
+    if (this.spectators().length >= MAX_SPECTATORS) throw new Error(`Room is full: ${MAX_SPECTATORS} spectators already watching`);
     const m = { id: memberId, name: String(name || 'Player').slice(0, 18), team: null, connected: true, bot: false };
     this.members.set(memberId, m);
     return m;
   }
 
   humanCount() { return [...this.members.values()].filter((m) => !m.bot).length; }
+  spectators() { return [...this.members.values()].filter((m) => !m.bot && !m.team); }
+
+  // Host hands control to another person in the room (must be online, not a computer player)
+  transferHost(byId, toId) {
+    this.assertHost(byId);
+    const to = this.members.get(toId);
+    if (!to || to.bot) throw new Error('Pick a person in the room');
+    if (!to.connected) throw new Error(`${to.name} is offline`);
+    if (toId === byId) return;
+    this.hostId = toId;
+    this.addLog({ kind: 'info', text: `${to.name} is now the host` });
+  }
+
+  // Reactions: everyone may react, spectators mostly. Per-person and per-room limits stop floods.
+  react(memberId, key, now = Date.now()) {
+    const m = this.members.get(memberId);
+    if (!m || m.bot) throw new Error('Not in room');
+    if (!REACTIONS.includes(key)) throw new Error('Unknown reaction');
+    m._reactTimes = (m._reactTimes || []).filter((t) => now - t < 10000);
+    const last = m._reactTimes[m._reactTimes.length - 1];
+    if ((last !== undefined && now - last < 1500) || m._reactTimes.length >= 4) throw new Error('Easy on the reactions');
+    this._roomReacts = (this._roomReacts || []).filter((t) => now - t < 1000);
+    if (this._roomReacts.length >= 6) throw new Error('Easy on the reactions');
+    m._reactTimes.push(now); this._roomReacts.push(now);
+    return { id: `${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`, key, name: m.name, team: m.team || null, spectator: !m.team };
+  }
 
   pickTeam(memberId, code) {
     if (this.phase !== 'lobby') throw new Error('Auction already started');
@@ -600,7 +629,7 @@ export class Room {
       hostId: this.hostId,
       phase: this.phase,
       settings: this.settings,
-      members: [...this.members.values()].map(({ _chatTimes, ...m }) => m),
+      members: [...this.members.values()].map(({ _chatTimes, _reactTimes, ...m }) => m),
       teams: this.teams,
       lot,
       paused: this.paused,

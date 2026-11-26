@@ -8,7 +8,8 @@
 </p>
 
 <p align="center">
-  <a href="https://ipl.sarvankumar.in"><strong>Play now: ipl.sarvankumar.in</strong></a>
+  <a href="https://ipl.sarvankumar.in"><strong>Play now: ipl.sarvankumar.in</strong></a><br />
+  <sub>Also at <a href="https://ipl-auction-bbho.onrender.com">ipl-auction-bbho.onrender.com</a></sub>
 </p>
 
 <p align="center">
@@ -75,6 +76,8 @@ When the auction ends, every owner arranges a Playing XI on a cricket ground, ge
 - All ten franchises with their names, colours and logos.
 - Computer players (Computer A, Computer B and so on) fill any empty franchise and bid sensibly for the roles they need.
 - Room chat: text chat in the lobby, during the auction and on the results screen, with quick replies, unread badges and spam protection.
+- Up to 10 spectators per room on top of the 10 team owners. Spectators send text reactions (Wow, Steal!, Overpaid, Bid!, Unlucky, Bravo) that float over the stage, limited per person and per room so they never flood the screen.
+- The host can hand over host controls to anyone in the room, in the lobby, mid-auction or on the results screen.
 - Refreshing or dropping connection puts you straight back in your seat. Leaving a lobby frees your franchise; if the host leaves, hosting passes on.
 
 **The auction**

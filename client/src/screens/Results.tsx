@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Chat from '../components/Chat';
+import HostTransfer from '../components/HostTransfer';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { getPlayer, getTeam, money, teamStrength } from '../lib/data';
@@ -111,6 +112,7 @@ export default function Results({ room }: { room: RoomState }) {
           ) : (
             <span className="dim" style={{ alignSelf: 'center', fontSize: 13 }}>Host can start another round in this room</span>
           )}
+          <HostTransfer room={room} />
           <button className="btn btn-ghost" onClick={leaveRoom}>Leave room</button>
         </div>
       </div>

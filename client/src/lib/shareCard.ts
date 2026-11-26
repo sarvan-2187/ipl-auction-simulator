@@ -3,7 +3,8 @@ import { getPlayer, getTeam, playerPhoto, ratingAs } from './data';
 import { roleIn, xiInfo } from './xi';
 import type { Role, TeamState } from './types';
 
-export const SITE = 'ipl.sarvankumar.in';
+// whichever address the player is on (custom domain or the Render link)
+export const SITE = typeof location !== 'undefined' && !/^(localhost|127\.)/.test(location.hostname) ? location.host : 'ipl.sarvankumar.in';
 const W = 1080;
 const H = 1350;
 

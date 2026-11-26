@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import Chat from '../components/Chat';
+import HostTransfer from '../components/HostTransfer';
 import { allTeams, money, teamPattern } from '../lib/data';
 import { call, memberId, leaveRoom } from '../lib/socket';
 import type { RoomState, Settings } from '../lib/types';
@@ -178,23 +179,32 @@ export default function Lobby({ room }: { room: RoomState }) {
           <div className="panel" style={{ padding: 18 }}>
             <div className="row" style={{ justifyContent: 'space-between' }}>
               <div className="eyebrow">In the room · {room.members.length}</div>
-              <div className="eyebrow gold">{owners.length} teams</div>
+              <div className="row" style={{ gap: 8 }}><HostTransfer room={room} compact /><div className="eyebrow gold">{owners.length} teams</div></div>
             </div>
             <div style={{ marginTop: 8 }}>
-              {room.members.map((m) => (
-                <div className="member" key={m.id}>
-                  <div className="avatar">{m.team ? <TeamLogo code={m.team} size={26} /> : m.name[0]?.toUpperCase()}</div>
-                  <div className="grow">
-                    <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 16 }} className="ellipsis">
-                      {m.name}{m.id === memberId ? ' (you)' : ''}
+              {[['Players', room.members.filter((m) => m.team)], [`Spectators · ${room.members.filter((m) => !m.bot && !m.team).length}/10`, room.members.filter((m) => !m.team && !m.bot)]].map(([label, list]) => (
+                (list as typeof room.members).length > 0 && (
+                <div key={label as string}>
+                  <div className="eyebrow member-group">{label as string}</div>
+                  {(list as typeof room.members).map((m) => (
+                    <div className="member" key={m.id}>
+                      <div className="avatar">{m.team ? <TeamLogo code={m.team} size={26} /> : m.name[0]?.toUpperCase()}</div>
+                      <div className="grow">
+                        <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 16 }} className="ellipsis">
+                          {m.name}{m.id === memberId ? ' (you)' : ''}
+                        </div>
+                        <div className="dim" style={{ fontSize: 12 }}>{m.id === room.hostId ? 'Host · ' : ''}{m.bot ? 'Computer player · ' : ''}{m.team ? `Bidding as ${m.team}` : 'Watching and reacting'}</div>
+                      </div>
+                      <span className={`dot ${m.connected ? '' : 'off'}`} title={m.connected ? 'Online' : 'Offline'} />
+                      {isHost && m.id !== memberId && !m.bot && m.connected && m.team && (
+                        <button className="btn btn-sm make-host" onClick={() => { if (confirm(`Make ${m.name} the host? You'll lose the host controls.`)) act('transferHost', { to: m.id }); }} title={`Make ${m.name} the host`}>Make host</button>
+                      )}
+                      {isHost && m.id !== memberId && (
+                        <button className="icon-btn" style={{ width: 30, height: 30, fontSize: 14 }} onClick={() => act('removeMember', { id: m.id })} aria-label={`Remove ${m.name}`}>✕</button>
+                      )}
                     </div>
-                    <div className="dim" style={{ fontSize: 12 }}>{m.id === room.hostId ? 'Host · ' : ''}{m.bot ? 'Computer player · ' : ''}{m.team ? `Bidding as ${m.team}` : 'Spectating'}</div>
-                  </div>
-                  <span className={`dot ${m.connected ? '' : 'off'}`} title={m.connected ? 'Online' : 'Offline'} />
-                  {isHost && m.id !== memberId && (
-                    <button className="icon-btn" style={{ width: 30, height: 30, fontSize: 14 }} onClick={() => act('removeMember', { id: m.id })} aria-label={`Remove ${m.name}`}>✕</button>
-                  )}
-                </div>
+                  ))}
+                </div>)
               ))}
             </div>
           </div>

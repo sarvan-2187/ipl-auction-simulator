@@ -181,3 +181,28 @@ test('room chat: trims, caps length, rate-limits, keeps the last 60', () => {
   assert.equal(r.publicState().chat.length, 60);
   assert.ok(!('_chatTimes' in r.publicState().members[0]));
 });
+
+test('spectators: up to 10 watchers, reactions rate-limited, host transfer', () => {
+  const r = new Room('SPEC1', 'h');
+  r.join('h', 'Host'); r.pickTeam('h', 'CSK'); r.join('f', 'F'); r.pickTeam('f', 'MI');
+  for (let i = 0; i < 10; i++) r.join('s' + i, 'Watcher ' + i);
+  assert.equal(r.spectators().length, 10);
+  assert.throws(() => r.join('s10', 'One too many'), /10 spectators/);
+  r.join('s3', 'Watcher 3'); // rejoining is always allowed
+  // reactions
+  assert.ok(r.react('s1', 'wow', 1000).spectator);
+  assert.throws(() => r.react('s1', 'wow', 1500), /Easy/);       // too soon
+  assert.throws(() => r.react('s2', 'lol', 3000), /Unknown/);
+  for (const t of [3000, 4600, 6200]) r.react('s1', 'bravo', t);
+  assert.throws(() => r.react('s1', 'bravo', 7800), /Easy/);     // 4 in 10 s
+  const room = new Room('SPEC2', 'h'); room.join('h', 'H');
+  for (let i = 0; i < 8; i++) room.join('x' + i, 'X');
+  let ok = 0; for (let i = 0; i < 8; i++) { try { room.react('x' + i, 'wow', 20000); ok++; } catch {} }
+  assert.equal(ok, 6); // room-wide cap per second
+  // host transfer
+  assert.throws(() => r.transferHost('f', 'f'), /host/);
+  r.transferHost('h', 's5'); assert.equal(r.hostId, 's5');
+  r.members.get('f').connected = false;
+  assert.throws(() => r.transferHost('s5', 'f'), /offline/);
+  r.addBot('s5', 'RCB'); assert.throws(() => r.transferHost('s5', 'bot-RCB'), /person/);
+});
