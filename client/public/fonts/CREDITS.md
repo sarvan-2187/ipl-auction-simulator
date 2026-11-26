@@ -10,3 +10,7 @@ NType 82 is a proprietary Nothing typeface, used here only in a private, non-com
 # Flag credits
 
 Flags: [flag-icons](https://github.com/lipis/flag-icons) by Panayiotis Lipiridis (MIT), in `/public/flags`. The West Indies cricket flag is a simple custom drawing.
+
+# Emoji credits
+
+Spectator reactions use [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji) 3D images (MIT), self-hosted in `/public/emoji`.

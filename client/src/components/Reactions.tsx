@@ -5,14 +5,18 @@ import { call, useSocketEvent } from '../lib/socket';
 import { useToast } from './ui';
 import { sfx } from '../lib/sound';
 
-export const REACTIONS: { key: string; label: string; tone: string }[] = [
-  { key: 'wow', label: 'Wow', tone: '#f5c04a' },
-  { key: 'steal', label: 'Steal!', tone: '#35d07f' },
-  { key: 'overpaid', label: 'Overpaid', tone: '#ff5468' },
-  { key: 'bid', label: 'Bid!', tone: '#5b8cff' },
-  { key: 'unlucky', label: 'Unlucky', tone: '#a3a3a3' },
-  { key: 'bravo', label: 'Bravo', tone: '#c084fc' },
+// Self-hosted 3D emoji (Microsoft Fluent Emoji, MIT) so they look the same on every device
+export const REACTIONS: { key: string; label: string }[] = [
+  { key: 'fire', label: 'Fire' },
+  { key: 'clap', label: 'Clap' },
+  { key: 'scream', label: 'Shocked' },
+  { key: 'joy', label: 'LOL' },
+  { key: 'money', label: 'Money gone' },
+  { key: 'mindblown', label: 'Mind blown' },
+  { key: 'skull', label: 'Dead' },
+  { key: 'pray', label: 'Please no' },
 ];
+const Emo = ({ k, size }: { k: string; size: number }) => <img src={`/emoji/${k}.webp`} width={size} height={size} alt="" className="emoji" draggable={false} />;
 const COOLDOWN = 1600;
 
 export function ReactionBar() {
@@ -32,8 +36,8 @@ export function ReactionBar() {
       <span className="rx-label">Spectating · react</span>
       <div className="rx-buttons">
         {REACTIONS.map((r) => (
-          <button key={r.key} onClick={() => send(r.key)} disabled={cooling} style={{ ['--rx' as any]: r.tone }}>
-            {r.label}
+          <button key={r.key} onClick={() => send(r.key)} disabled={cooling} aria-label={r.label} title={r.label}>
+            <Emo k={r.key} size={30} />
           </button>
         ))}
       </div>
@@ -43,6 +47,7 @@ export function ReactionBar() {
 }
 
 export function ReactionLayer() {
+  useEffect(() => { REACTIONS.forEach((r) => { const i = new Image(); i.src = `/emoji/${r.key}.webp`; }); }, []);
   const [items, setItems] = useState<{ id: string; key: string; name: string; x: number; y: number }[]>([]);
   const lane = useRef(0);
   useSocketEvent<{ id: string; key: string; name: string }>('reaction', useCallback((r) => {
@@ -62,9 +67,9 @@ export function ReactionLayer() {
           const r = REACTIONS.find((x) => x.key === it.key);
           if (!r) return null;
           return (
-            <motion.div key={it.id} className="rx-float" style={{ left: `${it.x}%`, bottom: `${it.y}%`, ['--rx' as any]: r.tone }}
+            <motion.div key={it.id} className="rx-float" style={{ left: `${it.x}%`, bottom: `${it.y}%` }}
               initial={{ opacity: 0, y: 30, scale: 0.7 }} animate={{ opacity: [0, 1, 1, 0], y: -260, scale: 1 }} transition={{ duration: 2.6, ease: 'easeOut', times: [0, 0.12, 0.75, 1] }}>
-              <b>{r.label}</b><span>{it.name}</span>
+              <Emo k={r.key} size={54} /><span>{it.name}</span>
             </motion.div>
           );
         })}

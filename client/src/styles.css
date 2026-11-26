@@ -996,3 +996,12 @@ body { font-feature-settings: 'ss01' off; }
 .ht-menu small { font-size: 11px; color: var(--text-3); font-weight: 600; }
 .ht-ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.06); font-weight: 800; }
 .results-hero .ht-menu { left: 50%; right: auto; translate: -50% 0; }
+
+/* emoji reactions */
+.emoji { display: inline-block; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.45)); }
+.rx-buttons button { width: 48px; height: 48px; padding: 0 !important; display: grid; place-items: center; border-radius: 14px !important; border: 1px solid var(--line-hi) !important; background: rgba(255, 255, 255, 0.05) !important; }
+.rx-buttons button:hover:not(:disabled) .emoji { transform: translateY(-2px) scale(1.08); }
+.rx-buttons button:active:not(:disabled) .emoji { transform: scale(1.25); }
+.rx-buttons .emoji { transition: transform 0.12s; }
+.rx-float .emoji { filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.55)); }
+@media (max-width: 820px) { .rx-buttons button { width: 38px; height: 38px; border-radius: 11px !important; } .rx-buttons .emoji { width: 24px; height: 24px; } .rx-buttons { gap: 5px; flex-wrap: nowrap; } }

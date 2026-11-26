@@ -20,7 +20,7 @@ export const DEFAULT_SETTINGS = {
 };
 export const ROLES = ['BAT', 'BOWL', 'AR', 'WK'];
 export const MAX_SPECTATORS = 10;
-export const REACTIONS = ['wow', 'steal', 'overpaid', 'bid', 'unlucky', 'bravo'];
+export const REACTIONS = ['fire', 'clap', 'scream', 'joy', 'money', 'mindblown', 'skull', 'pray'];
 // How computer players behave at each difficulty
 export const CPU_LEVELS = {
   // easy: drop out early, often let humans have players cheaply, slow to react, rarely jump-bid

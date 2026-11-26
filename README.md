@@ -76,7 +76,7 @@ When the auction ends, every owner arranges a Playing XI on a cricket ground, ge
 - All ten franchises with their names, colours and logos.
 - Computer players (Computer A, Computer B and so on) fill any empty franchise and bid sensibly for the roles they need.
 - Room chat: text chat in the lobby, during the auction and on the results screen, with quick replies, unread badges and spam protection.
-- Up to 10 spectators per room on top of the 10 team owners. Spectators send text reactions (Wow, Steal!, Overpaid, Bid!, Unlucky, Bravo) that float over the stage, limited per person and per room so they never flood the screen.
+- Up to 10 spectators per room on top of the 10 team owners. Spectators send emoji reactions that float over the stage, limited per person and per room so they never flood the screen.
 - The host can hand over host controls to anyone in the room, in the lobby, mid-auction or on the results screen.
 - Refreshing or dropping connection puts you straight back in your seat. Leaving a lobby frees your franchise; if the host leaves, hosting passes on.
 
@@ -215,6 +215,7 @@ docs/images/          README banner and screenshots
 ## Credits
 
 - **Typography:** [Geist](https://vercel.com/font) by Vercel (SIL Open Font License) for the interface, and NType 82 by [Nothing](https://nothing.tech) for player names. Font files and licences are in `client/public/fonts`.
+- **Emoji:** [Microsoft Fluent Emoji](https://github.com/microsoft/fluentui-emoji) 3D images (MIT) for spectator reactions.
 - **Flags:** [flag-icons](https://github.com/lipis/flag-icons) by Panayiotis Lipiridis (MIT). The West Indies flag is a custom drawing.
 - **Data:** squads, statistics and player photos from the public pages of [iplt20.com](https://www.iplt20.com).
 - **Built with:** React, Vite, Framer Motion, Express and Socket.IO.

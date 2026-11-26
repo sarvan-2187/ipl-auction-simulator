@@ -25,7 +25,7 @@ app.use((req, res, next) => {
 });
 // Photos, fonts, flags and hashed build assets never change between deploys of the same file name
 const LONG = { maxAge: '30d', immutable: true, index: false };
-for (const dir of ['assets', 'players', 'fonts', 'flags', 'teams']) app.use(`/${dir}`, express.static(path.join(DIST, dir), LONG));
+for (const dir of ['assets', 'players', 'fonts', 'flags', 'teams', 'emoji']) app.use(`/${dir}`, express.static(path.join(DIST, dir), LONG));
 app.use(express.static(DIST, { maxAge: '5m', index: false }));
 // Health check for UptimeRobot / Render. Cheap, never cached, works for HEAD and GET.
 // Keyword monitors can look for: "status":"ok"

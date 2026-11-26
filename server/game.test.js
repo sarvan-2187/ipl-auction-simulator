@@ -190,14 +190,14 @@ test('spectators: up to 10 watchers, reactions rate-limited, host transfer', () 
   assert.throws(() => r.join('s10', 'One too many'), /10 spectators/);
   r.join('s3', 'Watcher 3'); // rejoining is always allowed
   // reactions
-  assert.ok(r.react('s1', 'wow', 1000).spectator);
-  assert.throws(() => r.react('s1', 'wow', 1500), /Easy/);       // too soon
+  assert.ok(r.react('s1', 'fire', 1000).spectator);
+  assert.throws(() => r.react('s1', 'fire', 1500), /Easy/);       // too soon
   assert.throws(() => r.react('s2', 'lol', 3000), /Unknown/);
-  for (const t of [3000, 4600, 6200]) r.react('s1', 'bravo', t);
-  assert.throws(() => r.react('s1', 'bravo', 7800), /Easy/);     // 4 in 10 s
+  for (const t of [3000, 4600, 6200]) r.react('s1', 'clap', t);
+  assert.throws(() => r.react('s1', 'clap', 7800), /Easy/);     // 4 in 10 s
   const room = new Room('SPEC2', 'h'); room.join('h', 'H');
   for (let i = 0; i < 8; i++) room.join('x' + i, 'X');
-  let ok = 0; for (let i = 0; i < 8; i++) { try { room.react('x' + i, 'wow', 20000); ok++; } catch {} }
+  let ok = 0; for (let i = 0; i < 8; i++) { try { room.react('x' + i, 'fire', 20000); ok++; } catch {} }
   assert.equal(ok, 6); // room-wide cap per second
   // host transfer
   assert.throws(() => r.transferHost('f', 'f'), /host/);
