@@ -5,7 +5,8 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
-import { Room, makeCode } from './game.js';
+import { Room, makeCode, cleanName } from './game.js';
+import { securityHeaders, httpLimiter, requestGuard, hardenServer, originAllowed, socketGuard, LIMITS } from './security.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, '..', 'client', 'dist');
@@ -13,6 +14,10 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use(requestGuard);
+app.use(securityHeaders);
+app.use(httpLimiter());
 app.use(compression());
 // Optional: send visitors on other hostnames (e.g. the onrender.com address) to the custom domain.
 // Set CANONICAL_HOST=ipl.sarvankumar.in in Render only after the domain is verified and serving HTTPS.
@@ -106,7 +111,16 @@ app.get('*', (req, res) => {
 });
 
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: true } });
+hardenServer(server);
+const io = new Server(server, {
+  maxHttpBufferSize: LIMITS.maxPayloadBytes, // game messages are tiny; refuse big frames
+  pingTimeout: 20000,
+  connectTimeout: 15000,
+  // only our own pages may open a game socket
+  allowRequest: (req, cb) => cb(null, originAllowed(req.headers.origin, req.headers.host)),
+});
+const guard = socketGuard(io);
+const validId = (id) => typeof id === 'string' && /^[\w-]{6,64}$/.test(id);
 
 /** @type {Map<string, Room>} */
 const rooms = new Map();
@@ -138,7 +152,9 @@ io.on('connection', (socket) => {
 
   socket.on('create', ({ memberId: id, name }, cb) =>
     reply(cb, () => {
-      if (!id) throw new Error('Missing player id');
+      if (!validId(id)) throw new Error('Missing player id');
+      const block = guard.canCreateRoom(socket, rooms.size);
+      if (block) throw new Error(block);
       const code = makeCode(rooms);
       const r = new Room(code, id);
       rooms.set(code, r);
@@ -153,7 +169,7 @@ io.on('connection', (socket) => {
     reply(cb, () => {
       const r = rooms.get(String(code || '').toUpperCase().trim());
       if (!r) throw new Error('Room not found. Check the code.');
-      if (!id) throw new Error('Missing player id');
+      if (!validId(id)) throw new Error('Missing player id');
       r.join(id, name);
       attach(r, id);
       r.touch();
@@ -199,7 +215,8 @@ io.on('connection', (socket) => {
   });
   act('rename', ({ name }) => {
     const m = room.members.get(memberId);
-    if (m && name) m.name = String(name).slice(0, 18);
+    const n = cleanName(name);
+    if (m && n) m.name = n;
   });
 
 

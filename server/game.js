@@ -177,11 +177,12 @@ export class Room {
 
   // ---------- lobby ----------
   join(memberId, name) {
+    name = cleanName(name);
     const ex = this.members.get(memberId);
     if (ex) { ex.connected = true; if (name) ex.name = name; return ex; }
     // up to 10 spectators (people without a franchise), in addition to the 10 team owners
     if (this.spectators().length >= MAX_SPECTATORS) throw new Error(`Room is full: ${MAX_SPECTATORS} spectators already watching`);
-    const m = { id: memberId, name: String(name || 'Player').slice(0, 18), team: null, connected: true, bot: false };
+    const m = { id: memberId, name: name || 'Player', team: null, connected: true, bot: false };
     this.members.set(memberId, m);
     return m;
   }
@@ -860,6 +861,9 @@ export class Room {
 
 // Rough auction value from rating: 99 ≈ ₹20 Cr, 90 ≈ ₹9 Cr, 80 ≈ ₹1.5 Cr, below 70 nothing extra
 export const marketValue = (p) => (p.rating <= 70 ? 0 : Math.round(Math.pow((p.rating - 70) / 29, 2.2) * 2000 / 5) * 5);
+
+// Display names: printable characters only, collapsed spaces, 18 max
+export const cleanName = (n) => String(n ?? '').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18);
 
 const same = (x, y) => x.length === y.length && x.every((v) => y.includes(v));
 
