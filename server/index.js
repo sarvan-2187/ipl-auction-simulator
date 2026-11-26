@@ -28,6 +28,15 @@ app.use((req, res, next) => {
   if (req.method !== 'GET' || req.path.startsWith('/api/') || req.path.startsWith('/socket.io') || req.path === '/healthz') return next();
   res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
 });
+// PWA: the service worker must never be cached by the browser, or updates take a day to reach people
+app.get('/sw.js', (_req, res) => {
+  res.set({ 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Service-Worker-Allowed': '/' });
+  res.type('application/javascript').sendFile(path.join(DIST, 'sw.js'));
+});
+app.get('/manifest.webmanifest', (_req, res) => {
+  res.set('Cache-Control', 'no-cache');
+  res.type('application/manifest+json').sendFile(path.join(DIST, 'manifest.webmanifest'));
+});
 // Photos, fonts, flags and hashed build assets never change between deploys of the same file name
 const LONG = { maxAge: '30d', immutable: true, index: false };
 for (const dir of ['assets', 'players', 'fonts', 'flags', 'teams', 'emoji']) app.use(`/${dir}`, express.static(path.join(DIST, dir), LONG));
