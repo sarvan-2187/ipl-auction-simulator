@@ -128,7 +128,7 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
           ))}
         </div>
         <div className="credits">
-          Type: <b>Geist</b> by <a href="https://vercel.com/font" target="_blank" rel="noreferrer">Vercel</a> · <b>NType 82</b> serif by <a href="https://nothing.tech" target="_blank" rel="noreferrer">Nothing</a> · Flags by flag-icons · Emoji by Microsoft Fluent
+          Built by <a href="https://sarvankumar.in" target="_blank" rel="noreferrer">Sarvan Kumar</a> · Type: <b>Geist</b> by <a href="https://vercel.com/font" target="_blank" rel="noreferrer">Vercel</a> · <b>NType 82</b> serif by <a href="https://nothing.tech" target="_blank" rel="noreferrer">Nothing</a> · Flags by flag-icons · Emoji by Microsoft Fluent
         </div>
       </footer>
     </div>
