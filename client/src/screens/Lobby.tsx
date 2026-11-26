@@ -1,10 +1,12 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Page, PageTabs, usePhone } from '../components/Pager';
 import Chat from '../components/Chat';
 import HostTransfer from '../components/HostTransfer';
 import { allTeams, money, teamPattern } from '../lib/data';
 import { call, memberId, leaveRoom } from '../lib/socket';
 import type { RoomState, Settings } from '../lib/types';
-import { TeamLogo, useToast, GavelIcon } from '../components/ui';
+import { TeamLogo, useToast } from '../components/ui';
 import { sfx } from '../lib/sound';
 
 const CPU_HELP: Record<string, string> = {
@@ -44,26 +46,10 @@ export default function Lobby({ room }: { room: RoomState }) {
 
   const set = (patch: Partial<Settings>) => act('settings', patch);
   const step = (k: keyof Settings, d: number) => set({ [k]: (s[k] as number) + d });
+  const phone = usePhone();
+  const [page, setPage] = useState<'teams' | 'format' | 'rules' | 'room'>('teams');
 
-  return (
-    <div className="shell">
-      <div className="topbar">
-        <button className="icon-btn" onClick={leaveRoom} aria-label="Leave room" title="Leave room">←</button>
-        <div className="grow">
-          <div className="eyebrow">Auction lobby</div>
-          <div className="display" style={{ fontSize: 34 }}>Pick your franchise</div>
-        </div>
-        <div className="panel room-code">
-          <div>
-            <div className="eyebrow" style={{ fontSize: 10 }}>Room code</div>
-            <div className="code">{room.code}</div>
-          </div>
-          <button className="btn btn-sm btn-gold" onClick={share}>Invite</button>
-        </div>
-      </div>
-
-      <div className="lobby-grid">
-        <div className="col" style={{ gap: 18 }}>
+  const teamsEl = (
           <div className="team-grid">
             {allTeams().map((t, i) => {
               const owner = room.members.find((m) => m.team === t.code);
@@ -105,23 +91,24 @@ export default function Lobby({ room }: { room: RoomState }) {
               );
             })}
           </div>
-
+  );
+  const settingsEl = (
           <div className="panel" style={{ padding: 18 }}>
             <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
               <div className="eyebrow">Auction format {isHost ? '' : '· set by host'}</div>
             </div>
-            <div className="seg" style={{ marginBottom: 6 }}>
+            <div className="seg set-preset" style={{ marginBottom: 6 }}>
               {PRESETS.map((p) => (
                 <button key={p.key} className={s.pool === p.key ? 'on' : ''} onClick={() => isHost && set(p.patch)} disabled={!isHost}>
                   {p.label}<small>{p.sub}</small>
                 </button>
               ))}
             </div>
-            <div className="setting">
+            <div className="setting set-a">
               <label>Purse per team<small>Everyone starts with the same money</small></label>
               {isHost ? <div className="stepper"><button onClick={() => step('purse', -1000)}>−</button><span>{money(s.purse)}</span><button onClick={() => step('purse', 1000)}>+</button></div> : <b>{money(s.purse)}</b>}
             </div>
-            <div className="setting">
+            <div className="setting set-a">
               <label>Squad size<small>Minimum must be filled, maximum is a hard cap</small></label>
               {isHost ? (
                 <div className="row" style={{ gap: 6 }}>
@@ -130,11 +117,11 @@ export default function Lobby({ room }: { room: RoomState }) {
                 </div>
               ) : <b>{s.minSquad}–{s.maxSquad}</b>}
             </div>
-            <div className="setting">
+            <div className="setting set-a">
               <label>Overseas limit<small>Max overseas players per squad</small></label>
               {isHost ? <div className="stepper"><button onClick={() => step('maxOverseas', -1)}>−</button><span>{s.maxOverseas}</span><button onClick={() => step('maxOverseas', 1)}>+</button></div> : <b>{s.maxOverseas}</b>}
             </div>
-            <div className="setting">
+            <div className="setting set-b">
               <label>Squad rules<small>Minimum batters, bowlers, all-rounders and keepers per squad</small></label>
               <div className="role-steppers">
                 {(['BAT', 'BOWL', 'AR', 'WK'] as const).map((r) => {
@@ -149,7 +136,7 @@ export default function Lobby({ room }: { room: RoomState }) {
                 })}
               </div>
             </div>
-            <div className="setting">
+            <div className="setting set-a">
               <label>Computer difficulty<small>{CPU_HELP[s.cpuLevel || 'medium']}</small></label>
               {isHost ? (
                 <div className="seg" style={{ width: 240 }}>
@@ -159,11 +146,11 @@ export default function Lobby({ room }: { room: RoomState }) {
                 </div>
               ) : <b style={{ textTransform: 'capitalize' }}>{s.cpuLevel || 'medium'}</b>}
             </div>
-            <div className="setting">
+            <div className="setting set-b">
               <label>Bid clock<small>Seconds on the clock after each bid</small></label>
               {isHost ? <div className="stepper"><button onClick={() => step('bidTime', -1)}>−</button><span>{s.bidTime}s</span><button onClick={() => step('bidTime', 1)}>+</button></div> : <b>{s.bidTime}s</b>}
             </div>
-            <div className="setting">
+            <div className="setting set-b">
               <label>Accelerated round<small>Unsold players come back once at the end</small></label>
               {isHost ? (
                 <div className="seg" style={{ width: 140 }}>
@@ -172,7 +159,7 @@ export default function Lobby({ room }: { room: RoomState }) {
                 </div>
               ) : <b>{s.unsoldRound ? 'On' : 'Off'}</b>}
             </div>
-            <div className="setting">
+            <div className="setting set-b">
               <label>Trading window<small>After the auction, owners can swap players and cash before locking their XI</small></label>
               {isHost ? (
                 <div className="seg" style={{ width: 140 }}>
@@ -182,9 +169,8 @@ export default function Lobby({ room }: { room: RoomState }) {
               ) : <b>{s.trading !== false ? 'On' : 'Off'}</b>}
             </div>
           </div>
-        </div>
-
-        <div className="col" style={{ gap: 18 }}>
+  );
+  const membersEl = (
           <div className="panel" style={{ padding: 18 }}>
             <div className="row" style={{ justifyContent: 'space-between' }}>
               <div className="eyebrow">In the room · {room.members.length}</div>
@@ -217,12 +203,13 @@ export default function Lobby({ room }: { room: RoomState }) {
               ))}
             </div>
           </div>
-
+  );
+  const startEl = (
           <div className="panel" style={{ padding: 18 }}>
             {isHost ? (
               <>
                 <button className="btn btn-gold" style={{ width: '100%', height: 64, fontSize: 22 }} disabled={owners.length < 2} onClick={() => { sfx.unlock(); act('start'); }}>
-                  <GavelIcon size={26} /> Start auction
+                  Start auction
                 </button>
                 <p className="dim" style={{ fontSize: 13, margin: '10px 0 0', lineHeight: 1.5 }}>
                   {owners.length < 2
@@ -237,7 +224,8 @@ export default function Lobby({ room }: { room: RoomState }) {
               </div>
             )}
           </div>
-
+  );
+  const howEl = (
           <div className="panel" style={{ padding: 18 }}>
             <div className="eyebrow" style={{ marginBottom: 8 }}>How it works</div>
             <ol className="muted" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.7, fontSize: 14 }}>
@@ -247,6 +235,61 @@ export default function Lobby({ room }: { room: RoomState }) {
               <li>Keep enough purse to fill your minimum squad. Mind the overseas cap.</li>
             </ol>
           </div>
+  );
+  const topbarEl = (
+      <div className="topbar">
+        <button className="icon-btn" onClick={leaveRoom} aria-label="Leave room" title="Leave room">←</button>
+        <div className="grow">
+          <div className="eyebrow">Auction lobby</div>
+          <div className="display" style={{ fontSize: 34 }}>Pick your franchise</div>
+        </div>
+        <div className="panel room-code">
+          <div>
+            <div className="eyebrow" style={{ fontSize: 10 }}>Room code</div>
+            <div className="code">{room.code}</div>
+          </div>
+          <button className="btn btn-sm btn-gold" onClick={share}>Invite</button>
+        </div>
+      </div>
+  );
+
+  if (phone) {
+    const people = room.members.filter((m) => !m.bot).length;
+    return (
+      <div className="shell paged lobby-paged">
+        {topbarEl}
+        <PageTabs id="lobby" page={page} setPage={setPage} tabs={[
+          { key: 'teams', label: 'Teams', badge: owners.length ? `${owners.length}/10` : null },
+          { key: 'format', label: 'Format' },
+          { key: 'rules', label: 'Rules' },
+          { key: 'room', label: 'Room', badge: people },
+        ]} />
+        <div className="pages">
+          <AnimatePresence mode="wait" initial={false}>
+            {page === 'teams' && <Page k="teams">{teamsEl}</Page>}
+            {page === 'format' && <Page k="format" className="pg-format">{settingsEl}</Page>}
+            {page === 'rules' && <Page k="rules" className="pg-rules">{settingsEl}</Page>}
+            {page === 'room' && <Page k="room">{membersEl}</Page>}
+          </AnimatePresence>
+        </div>
+        <div className="page-foot">{startEl}</div>
+        <Chat room={room} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="shell">
+      {topbarEl}
+      <div className="lobby-grid">
+        <div className="col" style={{ gap: 18 }}>
+          {teamsEl}
+          {settingsEl}
+        </div>
+        <div className="col" style={{ gap: 18 }}>
+          {membersEl}
+          {startEl}
+          {howEl}
         </div>
       </div>
       <Chat room={room} />

@@ -8,6 +8,7 @@ import { autoXI, MAX_OS, roleIn, suggestions, XI_SIZE, xiInfo } from '../lib/xi'
 import type { Player, Role, RoomState, TeamState } from '../lib/types';
 import { TeamLogo, initials, useToast } from './ui';
 import { sfx } from '../lib/sound';
+import { PageTabs, usePhone } from './Pager';
 import { renderSquadCard, renderXICard, shareOrDownload, SITE } from '../lib/shareCard';
 
 // y = row height on the ground; half = how far from centre the row may spread (the oval is narrower at the ends)
@@ -95,11 +96,16 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
   const shown = useTransform(mv, (v) => v.toFixed(1));
   useEffect(() => { const c = animate(mv, info.rating, { duration: 0.6, ease: 'easeOut' }); return () => c.stop(); }, [info.rating, mv]);
 
+  // portrait phones: the ground and the squad list are two pages instead of one long scroll
+  const phone = usePhone() && !readOnly;
+  const [page, setPage] = useState<'ground' | 'squad'>('ground');
+  const pick = (id: number) => { add(id); };
+
   const byRow = ROWS.map((row) => ({ ...row, list: ids.filter((id) => roleIn(squad, id) === row.role) }));
   const ringColor = info0.primary;
 
   return (
-    <div className="xi" style={{ ['--c1' as any]: info0.primary, ['--c2' as any]: info0.secondary }}>
+    <div className={`xi ${phone ? 'paged' : ''}`} data-page={phone ? page : undefined} style={{ ['--c1' as any]: info0.primary, ['--c2' as any]: info0.secondary }}>
       <div className="xi-top">
         <div className="row" style={{ gap: 12, minWidth: 0 }}>
           <TeamLogo code={team.code} size={44} />
@@ -117,6 +123,12 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
           <i>{ids.length}/{Math.min(XI_SIZE, squad.length)}</i>
         </div>
       </div>
+      {phone && (
+        <PageTabs id="xi" page={page} setPage={setPage} tabs={[
+          { key: 'ground', label: 'Ground', badge: `${ids.length}/${Math.min(XI_SIZE, squad.length)}` },
+          { key: 'squad', label: editable ? 'Bench & tips' : 'Squad', badge: (editable ? tips.length : 0) || null },
+        ]} />
+      )}
 
       <div className="xi-main">
         <div className="ground-wrap">
@@ -179,13 +191,13 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
 
         <aside className="xi-side">
           {editable && (
-            <div className="row" style={{ gap: 8 }}>
+            <div className="row xi-actions" style={{ gap: 8 }}>
               <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => { sfx.newLot(); update(autoXI(squad)); }}>Auto-pick</button>
               <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => update([])} disabled={!ids.length}>Clear</button>
             </div>
           )}
-          {editable && ids.length > 0 && <div className="dim" style={{ fontSize: 12 }}>Tap a player on the ground to change his role or bench him.</div>}
-          <div className="row" style={{ gap: 8 }}>
+          {editable && ids.length > 0 && <div className="dim xi-hint" style={{ fontSize: 12 }}>Tap a player on the ground to change his role or bench him.</div>}
+          <div className="row xi-shares" style={{ gap: 8 }}>
             {ids.length > 0 && (
               <button className="btn btn-sm xi-share" onClick={() => makeCard('xi')} disabled={!!making}>{making === 'xi' ? 'Creating…' : 'Share XI'}</button>
             )}
@@ -208,14 +220,14 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
           )}
           {!readOnly && (
             <>
-              <div className="eyebrow" style={{ marginTop: 4 }}>Bench · {bench.length}</div>
+              <div className="eyebrow xi-bench-label" style={{ marginTop: 4 }}>Bench · {bench.length}{phone && editable ? ' · tap to add' : ''}</div>
               <div className="xi-bench">
                 {bench.map((e) => {
                   const p = getPlayer(e.id);
                   const role = roleIn(squad, e.id);
                   const src = playerPhoto(p);
                   return (
-                    <motion.button layoutId={`xi-${e.id}`} key={e.id} className="bench-card" onClick={() => add(e.id)} disabled={!editable}>
+                    <motion.button layoutId={`xi-${e.id}`} key={e.id} className="bench-card" onClick={() => pick(e.id)} disabled={!editable}>
                       <span className="b-img">{src ? <img src={src} alt="" loading="lazy" /> : <em>{initials(p.name)}</em>}</span>
                       <span className="b-txt">
                         <span className="pn ellipsis">{p.name}</span>
@@ -243,7 +255,7 @@ export default function XIBuilder({ room, team, readOnly = false, onDone }: { ro
           )}
           {!readOnly && locked && (
             <>
-              <div className="dim" style={{ fontSize: 13 }}>Locked. Your XI rating counts in the final standings.</div>
+              <div className="dim xi-locked-note" style={{ fontSize: 13 }}>Locked. Your XI rating counts in the final standings.</div>
               <button className="btn btn-sm" onClick={() => save(ids, false)}>Edit XI</button>
             </>
           )}

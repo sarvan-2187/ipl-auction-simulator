@@ -10,6 +10,8 @@ import { Face, TeamLogo, teamVars, useToast } from '../components/ui';
 import SquadDrawer from '../components/SquadDrawer';
 import { RoleRules, rulesMet } from '../components/RoleRules';
 import XIBuilder from '../components/XIBuilder';
+import { Page, PageTabs, usePhone } from '../components/Pager';
+import { AnimatePresence } from 'framer-motion';
 import TradeCenter, { TradeButton, useTradeAlerts } from '../components/TradeCenter';
 import { autoXI, roleIn, xiInfo } from '../lib/xi';
 import { ratingAs } from '../lib/data';
@@ -19,6 +21,9 @@ export default function Results({ room }: { room: RoomState }) {
   const [drawer, setDrawer] = useState<string | null>(null);
   const [viewXI, setViewXI] = useState<string | null>(null);
   const [trading, setTrading] = useState(false);
+  const phone = usePhone();
+  const [page, setPage] = useState<'table' | 'awards' | 'squads' | 'room'>('table');
+  const [squadIdx, setSquadIdx] = useState(0);
   const myTeam = Object.values(room.teams).find((t) => t.ownerId === memberId);
   useTradeAlerts(room, myTeam);
   // say so when the computers settled the last lots in one go
@@ -85,7 +90,7 @@ export default function Results({ room }: { room: RoomState }) {
 
   if (mode === 'xi' && myTeam) {
     return (
-      <div className="shell">
+      <div className={`shell ${phone ? 'paged xi-paged' : ''}`}>
         <div className="row" style={{ justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
           <div>
             <div className="eyebrow">Room {room.code} · Auction complete</div>
@@ -98,6 +103,119 @@ export default function Results({ room }: { room: RoomState }) {
         </div>
         <XIBuilder room={room} team={myTeam} onDone={() => setMode('results')} />
         {trades}
+        <Chat room={room} />
+      </div>
+    );
+  }
+
+  if (phone) {
+    const r = ranked[Math.min(squadIdx, ranked.length - 1)];
+    const owner = r && room.members.find((m) => m.team === r.t.code);
+    return (
+      <div className="shell paged results-paged">
+        <div className="rp-head">
+          {winner && <TeamLogo code={winner.t.code} size={44} />}
+          <div className="grow" style={{ minWidth: 0 }}>
+            <div className="eyebrow">Room {room.code} · {allLocked ? 'Champions' : 'Leading'}</div>
+            <div className="display ellipsis" style={{ fontSize: 22 }}>{winner ? getTeam(winner.t.code)?.name : 'Auction complete'}</div>
+          </div>
+          {winner && <div className="rp-score"><b>{winner.score.toFixed(1)}</b><span>XI</span></div>}
+        </div>
+        <PageTabs id="results" page={page} setPage={setPage} tabs={[
+          { key: 'table', label: 'Table' },
+          { key: 'awards', label: 'Awards' },
+          { key: 'squads', label: 'Squads' },
+          { key: 'room', label: 'Room' },
+        ]} />
+        <div className="pages">
+          <AnimatePresence mode="wait" initial={false}>
+            {page === 'table' && (
+              <Page k="table">
+                {!allLocked && <div className="dim" style={{ fontSize: 12 }}>Provisional until every team locks its XI</div>}
+                <div className="rp-table">
+                  {ranked.map((x, i) => {
+                    const o = room.members.find((m) => m.team === x.t.code);
+                    return (
+                      <button key={x.t.code} className={`rp-row ${o?.id === memberId ? 'me' : ''}`} style={teamVars(x.t.code)} onClick={() => { setSquadIdx(i); setPage('squads'); }}>
+                        <span className="rp-rank">{i + 1}</span>
+                        <TeamLogo code={x.t.code} size={28} />
+                        <span className="rp-name"><b>{x.t.code}</b><small className="ellipsis">{o?.name}{o?.bot ? ' · CPU' : ''}</small></span>
+                        <span className={`rp-lock ${x.locked ? 'on' : ''}`}>{x.locked ? 'Locked' : x.picked ? 'Picking' : '—'}</span>
+                        <b className="rp-xi">{x.score.toFixed(1)}</b>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Page>
+            )}
+            {page === 'awards' && (
+              <Page k="awards" className="rp-awards">
+                <Award title="Most expensive" b={priciest} note="record buy" />
+                <Award title="Steal of the auction" b={steal} note={`RTG ${steal?.p.rating}`} />
+                <Award title="Bidding war" b={overpay} note={overpay ? `${(overpay.price / overpay.p.base).toFixed(1)}× base` : ''} />
+              </Page>
+            )}
+            {page === 'squads' && r && (
+              <Page k={`squads-${r.t.code}`} className="rp-squad">
+                <div className="rp-pager">
+                  <button className="icon-btn" onClick={() => setSquadIdx((squadIdx - 1 + ranked.length) % ranked.length)} aria-label="Previous team">‹</button>
+                  <div className="rp-dots">{ranked.map((x, i) => <i key={x.t.code} className={i === squadIdx ? 'on' : ''} onClick={() => setSquadIdx(i)} />)}</div>
+                  <button className="icon-btn" onClick={() => setSquadIdx((squadIdx + 1) % ranked.length)} aria-label="Next team">›</button>
+                </div>
+                <div className="panel rcard rp-card" style={teamVars(r.t.code)}>
+                  <div className="rcard-head">
+                    <TeamLogo code={r.t.code} size={46} />
+                    <div className="grow" style={{ minWidth: 0 }}>
+                      <div className="display" style={{ fontSize: 24 }}>#{ranked.indexOf(r) + 1} {r.t.code}</div>
+                      <div className="muted ellipsis" style={{ fontWeight: 700, fontSize: 13 }}>{owner?.name}{owner?.bot ? ' · computer' : ''} · spent {money(r.spent)}</div>
+                    </div>
+                    <div className="rp-score"><b>{r.score.toFixed(1)}</b><span>XI</span></div>
+                  </div>
+                  <div className="rp-xi-list">
+                    {r.xi.map((x) => (
+                      <div key={x.p.id} className="rp-player">
+                        <Face p={x.p} className="mini-face" />
+                        <span className="ellipsis pn">{x.p.name}</span>
+                        <small>{x.role} {x.r}</small>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="row" style={{ gap: 8, padding: '0 10px 10px' }}>
+                    <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => setViewXI(r.t.code)}>On ground</button>
+                    <button className="btn btn-sm" style={{ flex: 1 }} onClick={() => setDrawer(r.t.code)}>Squad · {r.t.squad.length}</button>
+                  </div>
+                </div>
+              </Page>
+            )}
+            {page === 'room' && (
+              <Page k="room" className="rp-room">
+                <div className="panel" style={{ padding: 14, display: 'grid', gap: 10 }}>
+                  <button className="btn" onClick={copy}>Copy squads for WhatsApp</button>
+                  {isHost ? <button className="btn" onClick={rematch}>Play again · same room</button> : <div className="dim" style={{ fontSize: 13, textAlign: 'center' }}>Host can start another round in this room</div>}
+                  <HostTransfer room={room} />
+                  <button className="btn btn-ghost" onClick={leaveRoom}>Leave room</button>
+                </div>
+              </Page>
+            )}
+          </AnimatePresence>
+        </div>
+        {myTeam && (
+          <div className="page-foot rp-foot">
+            <button className="btn btn-gold" onClick={() => setMode('xi')}>{myTeam.xiLocked ? 'My XI' : 'Pick my XI'}</button>
+            <TradeButton room={room} team={myTeam} onOpen={() => setTrading(true)} />
+          </div>
+        )}
+        {trades}
+        {drawer && <SquadDrawer room={room} code={drawer} onClose={() => setDrawer(null)} />}
+        {viewXI && room.teams[viewXI] && (
+          <>
+            <motion.div className="drawer-back" onClick={() => setViewXI(null)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} />
+            <motion.div className="xi-modal" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} role="dialog" aria-label="Playing XI">
+              <button className="icon-btn xi-close" onClick={() => setViewXI(null)} aria-label="Close">✕</button>
+              <XIBuilder room={room} team={{ ...room.teams[viewXI], xi: ranked.find((x) => x.t.code === viewXI)!.xi.map((x) => x.p.id) }} readOnly />
+            </motion.div>
+          </>
+        )}
         <Chat room={room} />
       </div>
     );

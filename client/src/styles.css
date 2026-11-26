@@ -1326,3 +1326,186 @@ body { font-feature-settings: 'ss01' off; }
 .demo-lead-logo { position: absolute; left: 16px; top: 50px; width: 52px; height: 52px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5)); }
 .demo-name { background: none; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7); }
 .demo-bid { background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+/* =========================================================
+   Paged phone screens (lobby, Playing XI, results)
+   One screen tall; tabs switch pages; key action pinned at the bottom.
+   ========================================================= */
+.page-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 3px; border-radius: 14px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--line); flex: none; }
+.page-tabs button { position: relative; height: 36px; border-radius: 11px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-2); }
+.page-tabs button span, .page-tabs button em { position: relative; z-index: 1; }
+.page-tabs button.on { color: var(--text); }
+.page-tabs button:disabled { opacity: 0.4; }
+.page-tabs .pt-pill { position: absolute; inset: 0; border-radius: 11px; background: var(--panel-hi); box-shadow: inset 0 0 0 1px rgba(245, 192, 74, 0.45); }
+.page-tabs em { font-style: normal; font-size: 10px; letter-spacing: 0.02em; padding: 1px 6px; border-radius: 99px; background: rgba(245, 192, 74, 0.18); color: var(--gold); }
+
+@media (max-width: 820px) and (orientation: portrait) {
+  html:has(.paged), body:has(.paged) { overflow: hidden; height: 100%; overscroll-behavior: none; }
+  .shell.paged { height: 100vh; height: 100dvh; display: flex; flex-direction: column; gap: 8px; overflow: hidden; padding: max(10px, env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom)); }
+  .paged .pages { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  /* a page fits by design; scrolling inside it is only a fallback for very small screens */
+  .paged .page { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
+  .paged .page::-webkit-scrollbar { display: none; }
+  .page-foot { flex: none; }
+  .page-foot > .panel { padding: 10px !important; }
+
+  /* ---- lobby ---- */
+  .lobby-paged .topbar { flex: none; flex-wrap: nowrap; gap: 8px; margin: 0; }
+  .lobby-paged .topbar .display { font-size: 22px !important; white-space: nowrap; }
+  .lobby-paged .topbar .eyebrow { font-size: 10px; }
+  .lobby-paged .room-code { width: auto; padding: 6px 6px 6px 10px; gap: 8px; }
+  .lobby-paged .room-code .code { font-size: 20px; }
+  .lobby-paged .icon-btn { width: 36px; height: 36px; flex: none; }
+  .lobby-paged .team-grid { flex: 1; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 6px; }
+  .lobby-paged .team-tile { min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; align-content: center; justify-items: start; padding: 6px 8px; border-radius: 14px; text-align: left; }
+  .lobby-paged .team-tile img { grid-row: span 2; width: 40px !important; height: 40px !important; }
+  .lobby-paged .team-tile .tname { font-size: 18px; line-height: 1; }
+  .lobby-paged .team-tile .owner { font-size: 11px; padding: 1px 6px; margin: 2px 0 0; max-width: 100%; }
+  .lobby-paged .team-tile .bot-add { top: 50%; translate: 0 -50%; right: 6px; font-size: 10px; padding: 4px 6px; }
+  .lobby-paged .page > .panel { padding: 12px !important; }
+  .lobby-paged .setting { padding: 8px 0; gap: 8px; }
+  .lobby-paged .setting label { font-size: 14px; }
+  .lobby-paged .setting label small { font-size: 11px; }
+  .lobby-paged .seg button { padding: 6px 4px; }
+  .lobby-paged .member { padding: 6px 0; }
+  .lobby-paged .page-foot .btn-gold { height: 52px !important; font-size: 18px !important; }
+  .lobby-paged .page-foot p { font-size: 11px !important; margin-top: 6px !important; }
+  .lobby-paged .page-foot .display { font-size: 20px !important; }
+  .lobby-paged .chat-fab { bottom: calc(110px + env(safe-area-inset-bottom)); right: 14px; width: 46px; height: 46px; }
+
+  /* ---- Playing XI ---- */
+  .xi.paged { flex: 1; min-height: 0; gap: 8px; }
+  .xi.paged .xi-top { flex: none; padding: 8px 12px; }
+  .xi.paged .xi-rating { min-width: 84px; padding: 4px 10px; }
+  .xi.paged .xi-rating b { font-size: 30px; margin: 2px 0 0; }
+  .xi.paged .xi-main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+  .xi.paged .xi-side { position: static; flex: none; gap: 8px; }
+  .xi.paged .xi-lock { position: static; height: 50px; box-shadow: none; }
+  /* ground page: the oval fills the space, actions and Lock underneath */
+  .xi.paged[data-page='ground'] .ground-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .xi.paged[data-page='ground'] .ground { height: 100%; width: auto; max-width: 100%; max-height: 100%; }
+  .xi.paged[data-page='ground'] .xi-side > :not(.xi-actions):not(.xi-lock):not(.xi-locked-note):not(.btn) { display: none; }
+  .xi.paged[data-page='ground'] .xi-side > .xi-shares { display: none; }
+  /* bench page: list fills the space, Lock stays at the bottom */
+  .xi.paged[data-page='squad'] .ground-wrap { display: none; }
+  .xi.paged[data-page='squad'] .xi-side { flex: 1; min-height: 0; }
+  .xi.paged[data-page='squad'] .xi-actions, .xi.paged[data-page='squad'] .xi-hint { display: none; }
+  .xi.paged[data-page='squad'] .xi-bench { flex: 1; min-height: 0; max-height: none; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; }
+  .xi.paged[data-page='squad'] .bench-card { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 6px; padding: 4px 6px 4px 4px; }
+  .xi.paged[data-page='squad'] .bench-card .b-img { width: 32px; height: 32px; }
+  .xi.paged[data-page='squad'] .bench-card .b-txt .pn { font-size: 13px; }
+  .xi.paged[data-page='squad'] .bench-card .b-roles span { font-size: 9px; }
+  .xi.paged[data-page='squad'] .bench-card .b-add { width: 22px; height: 22px; }
+  .xi.paged[data-page='squad'] .xi-tips .xi-tip { padding: 7px 10px; font-size: 12px; }
+}
+@media (max-width: 820px) and (orientation: portrait) {
+  /* ---- Playing XI page frame (Results in XI mode) ---- */
+  .xi-paged > .row:first-child { flex: none; margin: 0 !important; flex-wrap: nowrap !important; }
+  .xi-paged > .row:first-child .display { font-size: 20px !important; white-space: nowrap; }
+  .xi-paged > .row:first-child .eyebrow { font-size: 10px; }
+  .xi-paged > .row:first-child .btn-sm { height: 32px; padding: 0 10px; font-size: 12px; }
+  .xi-paged .chat-fab { bottom: calc(76px + env(safe-area-inset-bottom)); right: 14px; width: 44px; height: 44px; }
+
+  /* ---- results ---- */
+  .rp-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; border: 1px solid var(--line); background: linear-gradient(120deg, rgba(245, 192, 74, 0.14), transparent 60%), var(--panel); }
+  .rp-score { display: grid; justify-items: center; line-height: 1; padding: 6px 10px; border-radius: 12px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(245, 192, 74, 0.4); }
+  .rp-score b { font-size: 22px; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .rp-score span { font-size: 9px; font-weight: 700; letter-spacing: 0.14em; color: var(--text-3); }
+  .rp-table { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); gap: 4px; }
+  .rp-row { display: grid; grid-template-columns: 18px 28px minmax(0, 1fr) auto 44px; align-items: center; gap: 8px; padding: 0 10px; min-height: 40px; border-radius: 12px; text-align: left;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--c1) 30%, transparent), var(--panel) 60%); border: 1px solid var(--line); }
+  .rp-row.me { border-color: rgba(245, 192, 74, 0.55); }
+  .rp-rank { font-weight: 800; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .rp-name { display: grid; min-width: 0; line-height: 1.1; }
+  .rp-name b { font-size: 15px; }
+  .rp-name small { font-size: 11px; color: var(--text-3); }
+  .rp-lock { font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-3); }
+  .rp-lock.on { color: var(--green); }
+  .rp-xi { font-size: 18px; text-align: right; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .rp-awards { justify-content: center; }
+  .rp-awards .award { padding: 12px; }
+  .rp-awards .award .display { font-size: 24px !important; }
+  .rp-squad { gap: 6px; }
+  .rp-pager { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .rp-pager .icon-btn { width: 36px; height: 36px; font-size: 22px; }
+  .rp-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .rp-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-hi); cursor: pointer; }
+  .rp-dots i.on { background: var(--gold); width: 18px; border-radius: 9px; }
+  .rp-card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .rp-card .rcard-head { padding: 10px 12px; flex: none; }
+  .rp-card .rcard-head .rank { display: none; }
+  .rp-xi-list { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); padding: 6px 12px; gap: 2px; }
+  .rp-player { display: flex; align-items: center; gap: 8px; min-height: 0; }
+  .rp-player .mini-face { width: 28px; height: 28px; border-radius: 8px; }
+  .rp-player .pn { font-size: 15px; flex: 1; min-width: 0; }
+  .rp-player small { font-size: 11px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
+  .rp-room { justify-content: center; }
+  .rp-foot { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .rp-foot .btn { height: 50px; }
+  .results-paged .chat-fab { bottom: calc(78px + env(safe-area-inset-bottom)); right: 14px; width: 44px; height: 44px; }
+}
+@media (max-width: 820px) and (orientation: portrait) {
+  .lobby-paged .pg-format .set-b, .lobby-paged .pg-rules .set-a, .lobby-paged .pg-rules .set-preset { display: none; }
+  .lobby-paged .pg-rules .panel > .row:first-child .eyebrow::after { content: ' · rules'; }
+  .lobby-paged .page-tabs button { letter-spacing: 0.04em; font-size: 11px; }
+  .lobby-paged .setting label small { line-height: 1.3; }
+}
+@media (max-width: 820px) and (orientation: portrait) and (max-height: 620px) {
+  .lobby-paged .setting label small { display: none; }
+}
+@media (max-width: 820px) and (orientation: portrait) {
+  .lobby-paged .topbar > .grow { min-width: 0; }
+  .lobby-paged .topbar .display { overflow: hidden; text-overflow: ellipsis; }
+  .lobby-paged .setting .stepper button { width: 28px; height: 28px; }
+  .lobby-paged .setting .stepper span { min-width: 54px; font-size: 15px; }
+}
+@media (max-width: 820px) and (orientation: portrait) and (max-height: 620px) {
+  .lobby-paged .page-foot p { display: none; }
+  .lobby-paged .topbar .eyebrow { display: none; }
+  .lobby-paged .topbar .display { font-size: 19px !important; }
+  .lobby-paged .setting { padding: 6px 0; }
+  .lobby-paged .seg button small { display: none; }
+}
+@media (max-width: 820px) and (orientation: portrait) {
+  /* chat button docks beside the bottom action instead of floating over the page */
+  .paged .chat-fab { width: 48px !important; height: 48px !important; right: 10px !important; }
+  .lobby-paged .page-foot { margin-right: 56px; }
+  .lobby-paged .chat-fab { bottom: calc(env(safe-area-inset-bottom) + 20px) !important; }
+  .results-paged .rp-foot { margin-right: 56px; }
+  .results-paged .chat-fab { bottom: calc(env(safe-area-inset-bottom) + 9px) !important; }
+  .xi-paged .xi-lock, .xi-paged .xi-locked-note { margin-right: 56px; }
+  .xi-paged .chat-fab { bottom: calc(env(safe-area-inset-bottom) + 9px) !important; }
+  .xi.paged .xi-side > * { width: auto; }
+  .xi.paged .xi-side { align-items: stretch; }
+  .xi.paged .xi-actions .btn { height: 34px; }
+  /* compact XI header so the ground gets the height */
+  .xi.paged .xi-top .eyebrow { display: none; }
+  .xi.paged .xi-top img { width: 34px !important; height: 34px !important; }
+  .xi.paged .xi-counts { margin: 0; gap: 8px; }
+  /* + CPU sits in the corner, clear of the owner line */
+  .lobby-paged .team-tile .bot-add { top: 5px; translate: none; right: 5px; padding: 2px 5px; }
+}
+@media (max-width: 820px) and (orientation: portrait) and (max-height: 620px) {
+  .xi-paged > .row:first-child .eyebrow { display: none; }
+  .xi.paged .xi-rating b { font-size: 24px; }
+  .xi.paged .xi-rating span { display: none; }
+}
+@media (max-width: 820px) and (orientation: portrait) {
+  .xi.paged .xi-side > .xi-actions, .xi.paged .xi-side > .xi-shares { width: 100%; }
+  .xi.paged .xi-lock { width: calc(100% - 56px); margin-right: 0 !important; }
+  .xi.paged .xi-shares .btn { white-space: nowrap; font-size: 12px; padding: 0 8px; flex: 1; }
+  .paged .page-foot .btn, .paged .rp-foot .btn { white-space: nowrap; }
+  .lobby-paged .page-foot .btn-gold { font-size: clamp(15px, 4.6vw, 18px) !important; }
+  /* bench: one column, role chips on one line */
+  .xi.paged[data-page='squad'] .xi-bench { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .xi.paged[data-page='squad'] .bench-card .b-txt { grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: 8px; }
+  .xi.paged[data-page='squad'] .bench-card .b-roles { display: flex; flex-wrap: nowrap; gap: 4px; }
+  .xi.paged[data-page='squad'] .bench-card .b-txt .pn { font-size: 14px; }
+}
+@media (max-width: 820px) and (orientation: portrait) {
+  .xi.paged .xi-main { align-items: stretch; }
+  .results-paged .rp-foot { margin-right: 0; padding-right: 58px; }
+}
+@media (max-width: 380px) and (orientation: portrait) {
+  .results-paged .rp-foot .btn { font-size: 14px; padding: 0 12px; min-width: 0; }
+}
