@@ -69,13 +69,9 @@ export default function TradeCenter({ room, team, onClose }: { room: RoomState; 
   const toggle = (list: number[], set: (v: number[]) => void, id: number) =>
     set(list.includes(id) ? list.filter((x) => x !== id) : list.length >= MAX_PICK ? list : [...list, id]);
 
-  const payLimit = cash >= 0 ? team.purse : other?.purse ?? 0;
-  const bump = (d: number) => setCash((c) => {
-    const n = c + d;
-    if (n > team.purse) return c;
-    if (n < -(other?.purse ?? 0)) return c;
-    return n;
-  });
+  const maxCash = Math.floor(team.purse / STEP) * STEP;
+  const minCash = Math.floor((other?.purse ?? 0) / STEP) * STEP;
+  useEffect(() => { setCash((c) => Math.max(-minCash, Math.min(maxCash, c))); }, [minCash, maxCash]);
 
   const ready = (give.length || get.length) && (give.length || cash > 0) && (get.length || cash < 0);
 
@@ -138,12 +134,13 @@ export default function TradeCenter({ room, team, onClose }: { room: RoomState; 
                 <div className="eyebrow">Cash</div>
                 <div className="dim" style={{ fontSize: 12 }}>{cash === 0 ? 'No money changes hands' : cash > 0 ? `You pay ${to} ${money(cash)}` : `${to} pays you ${money(-cash)}`}</div>
               </div>
-              <div className="stepper">
-                <button onClick={() => bump(-STEP)} aria-label="They pay more">−</button>
-                <span className="money">{cash === 0 ? '₹0' : `${cash > 0 ? 'You ' : 'They '}${money(Math.abs(cash), { short: true })}`}</span>
-                <button onClick={() => bump(STEP)} aria-label="You pay more">+</button>
+              <div className="cash-val money">{cash === 0 ? '₹0' : `${cash > 0 ? 'You pay ' : 'They pay '}${money(Math.abs(cash), { short: true })}`}</div>
+              <div className="cash-slider">
+                <input type="range" min={-minCash} max={maxCash} step={STEP} value={cash} aria-label="Cash in the trade"
+                  style={{ ['--p' as any]: `${maxCash + minCash ? ((cash + minCash) / (maxCash + minCash)) * 100 : 50}%` }}
+                  onChange={(e) => setCash(Number(e.target.value))} />
+                <div className="cash-ends"><span>{to} pays {money(minCash, { short: true })}</span><button type="button" onClick={() => setCash(0)}>Zero</button><span>You pay {money(maxCash, { short: true })}</span></div>
               </div>
-              <span className="dim" style={{ fontSize: 11 }}>Max {money(payLimit, { short: true })}</span>
             </div>
             <button className="btn btn-gold trade-send" disabled={!ready || busy} onClick={send}>
               {busy ? 'Sending…' : other && room.members.find((m) => m.id === other.ownerId)?.bot ? `Offer to ${to} (answers instantly)` : `Send offer to ${to}`}
