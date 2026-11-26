@@ -45,14 +45,17 @@ export default function App() {
   const myTeam = getTeam(me?.team);
   useEffect(() => {
     document.documentElement.style.setProperty('--team', myTeam?.primary || '#9a9a9a');
+    document.documentElement.style.setProperty('--fluid', myTeam?.primary || '#2f5bff');
     document.documentElement.style.setProperty('--team-2', myTeam?.secondary || '#f5c04a');
     document.documentElement.style.setProperty('--tt', myTeam?.text || '#fff');
   }, [myTeam]);
 
   return (
     <ToastProvider>
-      <div className="stage-bg" />
-      <div className="grain" />
+      <div className="stage-bg" aria-hidden="true">
+        <i className="blob b1" /><i className="blob b2" /><i className="blob b3" /><i className="blob b4" />
+      </div>
+      <div className="grain" aria-hidden="true" />
       {!connected && <div className="conn-banner">Reconnecting to the auction server…</div>}
       {!ready ? (
         <div className="home"><div className="eyebrow">Loading auction room…</div></div>

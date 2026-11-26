@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://ipl-auction-bbho.onrender.com"><strong>Play now: ipl-auction-bbho.onrender.com</strong></a>
+  <a href="https://ipl.sarvankumar.in"><strong>Play now: ipl.sarvankumar.in</strong></a>
 </p>
 
 <p align="center">

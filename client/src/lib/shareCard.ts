@@ -3,7 +3,7 @@ import { getPlayer, getTeam, playerPhoto, ratingAs } from './data';
 import { roleIn, xiInfo } from './xi';
 import type { Role, TeamState } from './types';
 
-export const SITE = 'ipl-auction-bbho.onrender.com';
+export const SITE = 'ipl.sarvankumar.in';
 const W = 1080;
 const H = 1350;
 

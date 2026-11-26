@@ -14,6 +14,15 @@ const PORT = process.env.PORT || 3001;
 const app = express();
 app.set('trust proxy', 1);
 app.use(compression());
+// Optional: send visitors on other hostnames (e.g. the onrender.com address) to the custom domain.
+// Set CANONICAL_HOST=ipl.sarvankumar.in in Render only after the domain is verified and serving HTTPS.
+const CANONICAL_HOST = process.env.CANONICAL_HOST;
+app.use((req, res, next) => {
+  const host = (req.get('host') || '').toLowerCase();
+  if (!CANONICAL_HOST || host === CANONICAL_HOST || host.startsWith('localhost') || host.startsWith('127.0.0.1')) return next();
+  if (req.method !== 'GET' || req.path.startsWith('/api/') || req.path.startsWith('/socket.io') || req.path === '/healthz') return next();
+  res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
+});
 // Photos, fonts, flags and hashed build assets never change between deploys of the same file name
 const LONG = { maxAge: '30d', immutable: true, index: false };
 for (const dir of ['assets', 'players', 'fonts', 'flags', 'teams']) app.use(`/${dir}`, express.static(path.join(DIST, dir), LONG));
@@ -74,7 +83,7 @@ app.get('/room/:code', (req, res, next) => {
     .replace(/(name="twitter:description" content=")[^"]*/, `$1${esc(desc)}`)
     .replace(/(name="description" content=")[^"]*/, `$1${esc(desc)}`)
     .replace(/(property="og:url" content=")[^"]*/, `$1${origin}/room/${code}`)
-    .replace(/https:\/\/ipl-auction-bbho\.onrender\.com\/og\.jpg/g, `${origin}/og-invite.jpg`);
+    .replace(/https:\/\/ipl\.sarvankumar\.in\/og\.jpg/g, `${origin}/og-invite.jpg`);
   res.set('Cache-Control', 'no-store').type('html').send(html);
 });
 app.get('*', (_req, res) => res.sendFile(path.join(DIST, 'index.html'), (err) => err && res.status(404).send('Run "npm run build" first, or use "npm run dev".')));

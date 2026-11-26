@@ -13,3 +13,6 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Uncomment once ipl.sarvankumar.in is verified in Render (Settings -> Custom Domains):
+      # - key: CANONICAL_HOST
+      #   value: ipl.sarvankumar.in
