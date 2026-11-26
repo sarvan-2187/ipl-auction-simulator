@@ -1596,3 +1596,6 @@ body { font-feature-settings: 'ss01' off; }
 .demo .demo-name .pn { font-size: clamp(24px, 7.5vw, 34px); line-height: 1.15; padding-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 640px) { .demo .demo-player img { height: 160px; } }
 @media (max-width: 640px) and (max-height: 700px) { .demo .demo-player img { height: 130px; } }
+
+/* landing demo: the SOLD ticket gets a solid backdrop so the player and bid underneath never show through */
+.demo .ceremony { background: radial-gradient(closest-side, rgba(4, 14, 8, 0.98), rgba(4, 14, 8, 0.94)); border-radius: 26px; }
