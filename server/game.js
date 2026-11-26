@@ -635,15 +635,21 @@ export class Room {
     this.addLog({ kind: 'info', text: `Trade: ${tr.from} sends ${part(tr.give, tr.cash) || 'nothing'} to ${tr.to} for ${part(tr.get, -tr.cash) || 'nothing'}` });
   }
 
-  // Computer teams accept when their best XI plus cash comes out ahead
+  // Computer teams accept when the deal doesn't weaken their best XI more than the cash makes up for,
+  // and they never sell for less than they paid (easy teams settle for a little less, hard want a premium)
   botLikesTrade(tr) {
-    const bot = this.teams[tr.to];
+    const bot = this.teams[tr.to], from = this.teams[tr.from];
+    const level = this.settings.cpuLevel in CPU_LEVELS ? this.settings.cpuLevel : 'medium';
     const before = xiInfo(autoXI(bot.squad, PLAYER_BY_ID), bot.squad, PLAYER_BY_ID).rating;
     const after = bot.squad.filter((x) => !tr.get.includes(x.id)).concat(tr.give.map((id) => ({ id, price: 0 })));
     const afterRating = xiInfo(autoXI(after, PLAYER_BY_ID), after, PLAYER_BY_ID).rating;
-    // ₹2 Cr of cash is worth about one point of XI rating; they want a small edge
-    const edge = { easy: -0.2, medium: 0.3, hard: 0.8 }[this.settings.cpuLevel] ?? 0.3;
-    return afterRating - before + tr.cash / 200 >= edge;
+    const edge = { easy: 0, medium: 0.2, hard: 0.5 }[level];
+    if (afterRating - before + tr.cash / 500 < edge) return false; // ₹5 Cr ≈ one point of XI rating
+    // a player is worth what was paid for him or his market value, whichever is higher
+    const worth = (t, id) => Math.max(t.squad.find((x) => x.id === id)?.price || 0, marketValue(PLAYER_BY_ID.get(id)));
+    const sum = (t, ids) => ids.reduce((a, id) => a + worth(t, id), 0);
+    const factor = { easy: 0.85, medium: 1, hard: 1.25 }[level];
+    return tr.cash + sum(from, tr.give) >= sum(bot, tr.get) * factor;
   }
 
   // Called ~4x/sec. Returns true when state changed and should be broadcast.
@@ -774,6 +780,9 @@ export class Room {
     };
   }
 }
+
+// Rough auction value from rating: 99 ≈ ₹20 Cr, 90 ≈ ₹9 Cr, 80 ≈ ₹1.5 Cr, below 70 nothing extra
+export const marketValue = (p) => (p.rating <= 70 ? 0 : Math.round(Math.pow((p.rating - 70) / 29, 2.2) * 2000 / 5) * 5);
 
 const same = (x, y) => x.length === y.length && x.every((v) => y.includes(v));
 

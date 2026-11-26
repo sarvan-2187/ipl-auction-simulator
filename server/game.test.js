@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Room, increment, buildQueue, DEFAULT_SETTINGS, PLAYER_BY_ID, roleCounts } from './game.js';
+import { Room, marketValue, increment, buildQueue, DEFAULT_SETTINGS, PLAYER_BY_ID, roleCounts } from './game.js';
 
 test('increments follow IPL slabs', () => {
   assert.equal(increment(30), 5);
@@ -248,7 +248,11 @@ test('post-auction trading: offers, accept, cash, limits, computer replies', () 
   const star = rcb.squad.slice().sort((x, y) => PLAYER_BY_ID.get(y.id).rating - PLAYER_BY_ID.get(x.id).rating)[0];
   assert.equal(r.proposeTrade('h', { to: 'RCB', give: [csk.squad.at(-1).id], get: [star.id] }).trade.status, 'rejected');
   const bench = rcb.squad.find((x) => !rcb.xi.includes(x.id));
-  assert.equal(r.proposeTrade('h', { to: 'RCB', get: [bench.id], cash: 200 }).trade.status, 'accepted');
+  assert.equal(r.proposeTrade('h', { to: 'RCB', get: [bench.id], cash: Math.max(bench.price, marketValue(PLAYER_BY_ID.get(bench.id))) - 5 }).trade.status, 'rejected'); // below his value
+  assert.equal(r.proposeTrade('h', { to: 'RCB', get: [bench.id], cash: Math.max(bench.price, marketValue(PLAYER_BY_ID.get(bench.id))) + 100 }).trade.status, 'accepted');
+  // and a star doesn't go for small change
+  const star2 = rcb.squad.slice().sort((x, y) => PLAYER_BY_ID.get(y.id).rating - PLAYER_BY_ID.get(x.id).rating)[0];
+  assert.equal(r.proposeTrade('h', { to: 'RCB', get: [star2.id], cash: 300 }).trade.status, 'rejected');
   assert.ok(rcb.xiLocked && rcb.xi.length === 11);
   // switched off
   const off = new Room('TOFF', 'h'); off.join('h', 'H'); off.pickTeam('h', 'CSK'); off.addBot('h', 'MI');
