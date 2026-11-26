@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AnimatePresence, animate, motion, useInView } from 'framer-motion';
-import { allPlayers, allTeams, increment, money, playerPhoto, ROLE_LABEL } from '../lib/data';
+import { allPlayers, allTeams, increment, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
 import { createRoom, joinRoom, getName, setName } from '../lib/socket';
 import { GavelIcon, TeamLogo, useToast } from '../components/ui';
 import { sfx } from '../lib/sound';
@@ -23,7 +23,7 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
             </motion.div>
             <div className="eyebrow">Live IPL auctions with your friends · Season 2027</div>
           </motion.div>
-          <h1 className="hero-title display" aria-label="The Dugout">
+          <h1 className="hero-title hero-serif" aria-label="The Dugout">
             <Reveal text="The" delay={0.1} />
             <br />
             <span className="gold-grad"><Reveal text="Dugout" delay={0.3} /></span>
@@ -232,6 +232,18 @@ function AuctionDemo() {
       <div className="demo-top">
         <span className="chip chip-gold">Marquee</span>
         <span className="demo-live"><i />Live</span>
+      </div>
+      {/* franchise artwork of whoever leads, crossfading as the lead changes (same as the real auction card) */}
+      <div className="demo-art" aria-hidden="true">
+        <AnimatePresence>
+          {leader ? (
+            <motion.img key={leader.code} className="demo-pattern" src={teamPattern(leader.code)} alt="" initial={{ opacity: 0, scale: 1.08 }} animate={{ opacity: 0.55, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.45 }} />
+          ) : (
+            <motion.div key="neutral" className="demo-pattern neutral" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+          )}
+        </AnimatePresence>
+        <div className="demo-glow" />
+        {leader && <motion.img key={`l-${leader.code}`} className="demo-lead-logo" src={`/teams/${leader.code}.svg`} alt="" initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 20 }} />}
       </div>
       <AnimatePresence mode="wait">
         <motion.div key={p.id} className="demo-player" initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 30 }} transition={{ type: 'spring', stiffness: 170, damping: 22 }}>

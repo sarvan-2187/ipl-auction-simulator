@@ -1306,3 +1306,23 @@ body { font-feature-settings: 'ss01' off; }
   .pinfo .bidbox { flex: 1; display: flex; flex-direction: column; justify-content: center; }
   .bid-history { display: none !important; }
 }
+
+/* landing: serif wordmark */
+.hero-title.hero-serif { font-family: var(--font-serif); font-weight: 400; letter-spacing: -0.02em; line-height: 0.95; }
+.lp-hero .hero-title.hero-serif { font-size: clamp(72px, 9.4vw, 132px); }
+.hero-serif .reveal { padding-bottom: 0.1em; }
+@media (max-width: 640px) { .lp-hero .hero-title.hero-serif { font-size: clamp(62px, 19vw, 86px); } }
+@media (max-width: 640px) and (max-height: 700px) { .lp-hero .hero-title.hero-serif { font-size: 60px; } }
+@media (orientation: landscape) and (max-height: 520px) { .lp-hero .hero-title.hero-serif { font-size: 60px; } }
+
+/* demo card: franchise artwork behind the player, like the auction card */
+.demo { isolation: isolate;
+  background: linear-gradient(170deg, color-mix(in srgb, var(--c1) 85%, #000) 0%, color-mix(in srgb, var(--c1) 40%, #000) 55%, #070707 80%); }
+.demo-art { position: absolute; inset: 0 0 auto 0; height: 62%; z-index: -1; overflow: hidden; border-radius: 26px 26px 0 0;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent); mask-image: linear-gradient(180deg, #000 60%, transparent); }
+.demo-pattern { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; mix-blend-mode: overlay; }
+.demo-pattern.neutral { background: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 2px, transparent 2px 14px); }
+.demo-glow { position: absolute; left: 50%; top: 58%; width: 70%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.22), transparent 65%); }
+.demo-lead-logo { position: absolute; left: 16px; top: 50px; width: 52px; height: 52px; filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.5)); }
+.demo-name { background: none; text-shadow: 0 2px 14px rgba(0, 0, 0, 0.7); }
+.demo-bid { background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
