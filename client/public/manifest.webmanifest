@@ -1,7 +1,7 @@
 {
-  "name": "The IPL Auction Room",
-  "short_name": "IPL Auction",
-  "description": "Live multiplayer IPL auction with friends.",
+  "name": "The Dugout",
+  "short_name": "Dugout",
+  "description": "Live IPL auctions with your friends.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -39,7 +39,7 @@ function health(_req, res) {
   res.set('Cache-Control', 'no-store, max-age=0');
   res.json({
     status: 'ok',
-    service: 'ipl-auction',
+    service: 'the-dugout',
     uptimeSeconds: Math.round((Date.now() - STARTED) / 1000),
     rooms: rooms.size,
     liveAuctions: live,
@@ -70,7 +70,7 @@ app.get('/room/:code', (req, res, next) => {
   const r = rooms.get(code);
   const host = r?.members.get(r.hostId)?.name;
   const taken = r ? [...r.members.values()].filter((m) => m.team).length : 0;
-  const title = host ? `${host} invited you to an IPL auction` : 'Join my IPL auction';
+  const title = host ? `${host} invited you to an IPL auction on The Dugout` : 'Join my IPL auction on The Dugout';
   const desc = r
     ? `Room ${code} · ${taken}/10 franchises taken. Pick a team, bid live and build your Playing XI. Free, no sign-up.`
     : `Room ${code}. Pick a franchise, bid live against your friends and build your Playing XI. Free, no sign-up.`;
@@ -239,4 +239,4 @@ setInterval(() => {
   }
 }, 60e3);
 
-server.listen(PORT, () => console.log(`IPL Auction server on http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`The Dugout server on http://localhost:${PORT}`));

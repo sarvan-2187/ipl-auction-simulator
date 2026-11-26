@@ -34,7 +34,7 @@ export const TEAMS = [
 const CODE_BY_ID = Object.fromEntries(TEAMS.map((t) => [t.id, t.code]));
 
 
-const WIKI_UA = { 'user-agent': 'IPLAuctionSimulator/1.0 (private hobby game; data refresh script)', 'api-user-agent': 'IPLAuctionSimulator/1.0' };
+const WIKI_UA = { 'user-agent': 'TheDugout/1.0 (private hobby game; data refresh script)', 'api-user-agent': 'IPLAuctionSimulator/1.0' };
 const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
 async function getJSON(url, headers = UA) {
   for (let i = 0; i < 4; i++) {

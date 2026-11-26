@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Real-time multiplayer IPL auction game for friends: room codes, all 10 franchises, 430+ players with photos.",
+  "description": "The Dugout: real-time multiplayer IPL auctions with friends. Room codes, all 10 franchises, 511 players with photos, Playing XI.",
   "scripts": {
     "postinstall": "npm --prefix client install --no-audit --no-fund",
     "dev": "concurrently -k -n server,client -c blue,magenta \"node --watch server/index.js\" \"npm --prefix client run dev\"",

@@ -35,9 +35,9 @@ export default function Lobby({ room }: { room: RoomState }) {
   }
 
   async function share() {
-    const text = `Join my IPL auction! Room code ${room.code}`;
+    const text = `Join my IPL auction on The Dugout! Room code ${room.code}`;
     try {
-      if (navigator.share) await navigator.share({ title: 'IPL Auction Room', text, url: link });
+      if (navigator.share) await navigator.share({ title: 'The Dugout', text, url: link });
       else { await navigator.clipboard.writeText(`${text}: ${link}`); toast('Invite link copied'); }
     } catch {}
   }

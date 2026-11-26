@@ -44,7 +44,7 @@ export default function Results({ room }: { room: RoomState }) {
   }, [mode]);
 
   function summary() {
-    const lines = [`IPL Auction Room ${room.code} — Final squads`, ''];
+    const lines = [`The Dugout · Room ${room.code} · Final squads`, ''];
     ranked.forEach((r, i) => {
       const owner = room.members.find((m) => m.team === r.t.code)?.name;
       lines.push(`${i + 1}. ${r.t.code} (${owner}) · strength ${r.score} · spent ${money(r.spent)}`);

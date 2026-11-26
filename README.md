@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="docs/images/banner.jpg" alt="The IPL Auction Room" width="100%" />
+  <img src="docs/images/banner.jpg" alt="The Dugout" width="100%" />
 </p>
 
 <p align="center">
-  <strong>A real-time, multiplayer IPL auction for friends.</strong><br />
+  <strong>The Dugout: real-time, multiplayer IPL auctions with your friends.</strong><br />
   Create a room, share the code, pick a franchise and fight for every player live, then build and share your Playing XI.
 </p>
 
@@ -39,7 +39,7 @@
 
 ## Overview
 
-The IPL Auction Room recreates the tension of the IPL auction table for a group of friends. One person hosts, everyone else joins with a five-letter room code, and each player takes one of the ten franchises. Players come up in sets, the clock resets on every bid, and the hammer falls when the clock runs out. Empty franchises can be handed to computer players, so a full ten-team auction works even with two people.
+The Dugout recreates the tension of the IPL auction table for a group of friends. One person hosts, everyone else joins with a five-letter room code, and each player takes one of the ten franchises. Players come up in sets, the clock resets on every bid, and the hammer falls when the clock runs out. Empty franchises can be handed to computer players, so a full ten-team auction works even with two people.
 
 When the auction ends, every owner arranges a Playing XI on a cricket ground, gets suggestions to improve it, locks it in and shares the result as an image.
 
@@ -98,7 +98,7 @@ When the auction ends, every owner arranges a Playing XI on a cricket ground, ge
 - Copy every squad as text for a group chat, and play again in the same room with the same friends.
 
 **Sharing and install**
-- Rich link previews: the site shares with a designed 1200 x 630 card, and room links preview as a personal invite ("Sarvan invited you to an IPL auction · Room ABCDE") with live franchise count.
+- Rich link previews: the site shares with a designed 1200 x 630 card, and room links preview as a personal invite ("Sarvan invited you to an IPL auction on The Dugout") with live franchise count.
 - Installable on phones: add to the home screen for a full-screen app with its own icon.
 
 ## How a game works

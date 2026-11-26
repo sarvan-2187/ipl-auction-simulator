@@ -32,10 +32,10 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <div className="brand-mark">
             <div className="gavel"><GavelIcon size={28} /></div>
-            <div className="eyebrow">Private Friends League · Season 2027</div>
+            <div className="eyebrow">Live IPL auctions with your friends · Season 2027</div>
           </div>
           <h1 className="hero-title display">
-            The IPL<br /><span className="gold-grad">Auction Room</span>
+            The<br /><span className="gold-grad">Dugout</span>
           </h1>
           <p className="hero-sub">
             Grab a franchise, bring your mates, and fight over every star in a live, real-time auction. Purse, overseas caps and the hammer, all for real.

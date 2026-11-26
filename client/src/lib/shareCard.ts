@@ -200,7 +200,7 @@ export async function renderXICard(team: TeamState, ids: number[], ownerName: st
   ctx.fillText(SITE, W - 56, H - 74);
   ctx.fillStyle = '#6b6b6b';
   ctx.font = '500 18px Geist, sans-serif';
-  ctx.fillText(`IPL Auction Room · Room ${roomCode}`, W - 56, H - 46);
+  ctx.fillText(`The Dugout · Room ${roomCode}`, W - 56, H - 46);
 
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('render failed'))), 'image/png'));
 }
@@ -344,7 +344,7 @@ export async function renderSquadCard(team: TeamState, ownerName: string, roomCo
   ctx.fillText(SITE, W - side, H - 56);
   ctx.fillStyle = 'rgba(255,255,255,0.55)';
   ctx.font = '500 16px Geist, sans-serif';
-  ctx.fillText(`IPL Auction Room · Room ${roomCode}`, W - side, H - 32);
+  ctx.fillText(`The Dugout · Room ${roomCode}`, W - side, H - 32);
 
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('render failed'))), 'image/png'));
 }
