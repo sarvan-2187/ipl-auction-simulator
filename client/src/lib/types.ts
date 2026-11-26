@@ -49,6 +49,7 @@ export interface TeamState {
   squad: { id: number; price: number; role?: Role }[];
   xi?: number[] | null;
   xiLocked?: boolean;
+  doneBuying?: boolean;
 }
 
 export interface Lot {

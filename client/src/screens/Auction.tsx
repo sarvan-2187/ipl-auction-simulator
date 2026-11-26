@@ -9,7 +9,7 @@ import { call, memberId } from '../lib/socket';
 import type { Lot, Player, RoomState, TeamState } from '../lib/types';
 import { Face, GavelIcon, Silhouette, TeamLogo, initials, teamVars, useToast } from '../components/ui';
 import SquadDrawer from '../components/SquadDrawer';
-import { RoleRules } from '../components/RoleRules';
+import { RoleRules, rulesMet } from '../components/RoleRules';
 import { isMuted, setMuted, sfx } from '../lib/sound';
 
 import { Flag, SpeakerIcon } from '../components/Icons';
@@ -94,7 +94,7 @@ export default function Auction({ room }: { room: RoomState }) {
   const next = lot?.next ?? null;
   const iPassed = !!(myTeam && lot?.status === 'live' && lot.passed.includes(myTeam.code));
   // passing is final for this player
-  const block = iPassed ? 'Passed on this player' : blocker(room, myTeam, next);
+  const block = myTeam?.doneBuying ? 'Done buying' : iPassed ? 'Passed on this player' : blocker(room, myTeam, next);
 
   // ---- sounds & effects on state transitions
   const prev = useRef<{ id?: number; bids?: number; status?: string; leader?: string | null }>({});
@@ -214,6 +214,7 @@ export default function Auction({ room }: { room: RoomState }) {
 
         {/* ---------- center: stage ---------- */}
         <main className="center">
+          {myTeam && <DoneBuying room={room} team={myTeam} />}
           <div className="team-strip">
             {teams.map((t) => <TeamRow key={t.code} t={t} room={room} owner={ownerName(t.code)} onOpen={() => setDrawer(t.code)} />)}
           </div>
@@ -270,7 +271,8 @@ export default function Auction({ room }: { room: RoomState }) {
                 <JumpBtn label="+1 Cr" extra={100} next={next} room={room} team={myTeam} onBid={bid} disabled={!!block} />
               </div>
             </div>
-          ) : (
+          ) : null}
+          {!myTeam && (
             <div className="panel controls spectator">
               <ReactionBar />
             </div>
@@ -291,6 +293,40 @@ export default function Auction({ room }: { room: RoomState }) {
       <ReactionLayer />
       <Chat room={room} raised />
       {drawer && room.teams[drawer] && <SquadDrawer room={room} code={drawer} onClose={() => setDrawer(null)} />}
+    </div>
+  );
+}
+
+// Once your squad is legal you can stop bidding; when every person is done, computers settle the rest instantly
+function DoneBuying({ room, team }: { room: RoomState; team: TeamState }) {
+  const toast = useToast();
+  const s = room.settings;
+  const full = team.squad.length >= s.maxSquad;
+  const done = team.doneBuying || full;
+  const canStop = team.squad.length >= s.minSquad && rulesMet(room, team);
+  const waitingOn = Object.values(room.teams)
+    .filter((t) => t.code !== team.code && !t.doneBuying && t.squad.length < s.maxSquad)
+    .map((t) => room.members.find((m) => m.id === t.ownerId))
+    .filter((m) => m && !m.bot)
+    .map((m) => m!.name);
+  if (!done && !canStop) return null;
+  if (done) {
+    return (
+      <div className="panel done-strip on">
+        <b>{full ? 'Squad full' : "You're done buying"}</b>
+        <span>{waitingOn.length ? `Waiting for ${waitingOn.join(', ')} to finish. Computers then settle the rest instantly.` : 'Computers are settling the rest…'}</span>
+      </div>
+    );
+  }
+  const stop = async () => {
+    if (!confirm(`Stop buying with ${team.squad.length} players? You can't bid again in this auction.${waitingOn.length ? '' : ' Computers will finish the remaining players instantly.'}`)) return;
+    const r = await call('doneBuying');
+    if (!r.ok) toast(r.error || 'Failed', true);
+  };
+  return (
+    <div className="panel done-strip">
+      <span>Squad ready · {team.squad.length}/{s.maxSquad}</span>
+      <button className="btn btn-sm" onClick={stop}>{waitingOn.length ? 'Done buying' : 'Done · finish auction'}</button>
     </div>
   );
 }

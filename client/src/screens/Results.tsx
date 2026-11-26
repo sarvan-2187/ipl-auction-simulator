@@ -21,6 +21,11 @@ export default function Results({ room }: { room: RoomState }) {
   const [trading, setTrading] = useState(false);
   const myTeam = Object.values(room.teams).find((t) => t.ownerId === memberId);
   useTradeAlerts(room, myTeam);
+  // say so when the computers settled the last lots in one go
+  useEffect(() => {
+    const ff = room.log.find((l) => /^Fast-forward/.test(l.text) && Date.now() - l.t < 15000);
+    if (ff) toast(ff.text.replace('Fast-forward: ', 'Fast-forward · '));
+  }, []);
   const trades = trading && myTeam ? <TradeCenter room={room} team={myTeam} onClose={() => setTrading(false)} /> : null;
   // straight to the XI builder after the auction until you've locked your XI
   const [mode, setMode] = useState<'xi' | 'results'>(() => (myTeam && !myTeam.xiLocked && myTeam.squad.length ? 'xi' : 'results'));

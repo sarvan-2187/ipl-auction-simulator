@@ -59,6 +59,14 @@ if (process.env.DEV_TOOLS === '1') {
     broadcast(r);
     res.json({ ok: true });
   });
+  // give every person's team a legal minimum squad from players outside the pool, auction keeps going
+  app.post('/api/dev/fill/:code', (req, res) => {
+    const r = rooms.get(req.params.code);
+    if (!r || r.phase !== 'auction') return res.status(400).json({ error: 'room not in auction' });
+    r.devFillHumans();
+    broadcast(r);
+    res.json({ ok: true });
+  });
 }
 app.all('/api/*', (_req, res) => res.status(404).json({ status: 'error', error: 'Not found' }));
 // Room links get invite-specific link previews (WhatsApp, Discord, X read these tags)
@@ -173,6 +181,7 @@ io.on('connection', (socket) => {
   act('start', () => room.start(memberId));
   act('bid', ({ amount, seen }) => room.placeBid(memberId, Number(amount), Date.now(), seen === undefined ? undefined : seen));
   act('pass', () => room.pass(memberId));
+  act('doneBuying', () => room.doneBuying(memberId));
   act('host', ({ action }) => room.hostAction(memberId, action));
   act('rematch', () => room.rematch(memberId));
   act('setRole', ({ id, role }) => room.setRole(memberId, id, role));

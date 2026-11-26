@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Room, marketValue, increment, buildQueue, DEFAULT_SETTINGS, PLAYER_BY_ID, roleCounts } from './game.js';
+import { Room, PLAYERS, marketValue, increment, buildQueue, DEFAULT_SETTINGS, PLAYER_BY_ID, roleCounts } from './game.js';
 
 test('increments follow IPL slabs', () => {
   assert.equal(increment(30), 5);
@@ -258,4 +258,51 @@ test('post-auction trading: offers, accept, cash, limits, computer replies', () 
   const off = new Room('TOFF', 'h'); off.join('h', 'H'); off.pickTeam('h', 'CSK'); off.addBot('h', 'MI');
   off.updateSettings('h', { trading: false }); off.start('h', 0); off.devFillAndFinish();
   assert.throws(() => off.proposeTrade('h', { to: 'MI', get: [off.teams.MI.squad[0].id], cash: 50 }), /turned off/);
+});
+
+test('computers fast-forward the rest once every person is done buying', () => {
+  const r = new Room('FAST1', 'h');
+  r.join('h', 'Host'); r.pickTeam('h', 'CSK');
+  for (const c of ['MI', 'RCB', 'KKR', 'SRH']) r.addBot('h', c);
+  r.updateSettings('h', { pool: 'blitz', minSquad: 11, maxSquad: 15, maxOverseas: 5 });
+  let t = 0;
+  r.start('h', t);
+  assert.throws(() => r.doneBuying('h', t), /at least 11/);
+  // Host's squad is full straight away (players outside the auction pool)
+  const inPool = new Set(r.queue.map((q) => q.id));
+  const want = { WK: 2, BOWL: 5, AR: 3, BAT: 5 };
+  for (const [role, n] of Object.entries(want)) {
+    for (const p of PLAYERS.filter((x) => x.role === role && !x.overseas && !inPool.has(x.id)).slice(0, n)) r.teams.CSK.squad.push({ id: p.id, price: 30, role });
+  }
+  assert.equal(r.teams.CSK.squad.length, 15);
+  while (r.phase === 'auction' && t < 120000) r.tick((t += 200));
+  assert.equal(r.phase, 'results');
+  assert.ok(t < 30000, `took ${t / 1000}s of game time`);
+  for (const team of Object.values(r.teams)) {
+    assert.ok(team.purse >= 0 && team.squad.length <= 15);
+    if (team.code !== 'CSK') assert.ok(team.squad.length >= 11, `${team.code} has ${team.squad.length}`);
+  }
+  assert.ok(r.log.some((l) => /Fast-forward/.test(l.text)));
+});
+
+test('done buying: rules must be met, then the team sits out and computers finish', () => {
+  const r = new Room('FAST2', 'h');
+  r.join('h', 'Host'); r.pickTeam('h', 'CSK'); r.addBot('h', 'MI');
+  r.updateSettings('h', { minSquad: 11, roleMin: { BAT: 3, BOWL: 4, AR: 2, WK: 2 } });
+  r.start('h', 0);
+  const inPool = new Set(r.queue.map((q) => q.id));
+  for (const p of PLAYERS.filter((x) => x.role === 'BAT' && !inPool.has(x.id)).slice(0, 11)) r.teams.CSK.squad.push({ id: p.id, price: 30, role: 'BAT' });
+  assert.throws(() => r.doneBuying('h', 0), /still need/);
+  r.teams.CSK.squad = [];
+  for (const [role, n] of Object.entries({ WK: 2, BOWL: 4, AR: 2, BAT: 3 })) {
+    for (const p of PLAYERS.filter((x) => x.role === role && !inPool.has(x.id)).slice(0, n)) r.teams.CSK.squad.push({ id: p.id, price: 30, role });
+  }
+  let t = 3000;
+  r.tick(t);
+  r.doneBuying('h', t);
+  assert.ok(r.lot.passed.includes('CSK'));
+  assert.throws(() => r.placeBid('h', r.nextBidAmount(), t), /finished buying/);
+  while (r.phase === 'auction' && t < 60000) r.tick((t += 200));
+  assert.equal(r.phase, 'results');
+  assert.equal(r.teams.CSK.squad.length, 11);
 });

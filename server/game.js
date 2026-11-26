@@ -374,7 +374,7 @@ export class Room {
     this.lot = {
       id: q.id, set: q.set, base: p.base, bid: null, leader: null,
       endsAt: now + (this.settings.bidTime + 3) * 1000, // a little longer for the opening bid
-      history: [], status: 'live', passed: [], n: this.idx + 1,
+      history: [], status: 'live', passed: this.activeTeams().filter((t) => t.doneBuying).map((t) => t.code), n: this.idx + 1,
     };
     this.botPlans = {};
   }
@@ -388,6 +388,7 @@ export class Room {
     const team = m && this.teams[m.team];
     if (!team) throw new Error('You are spectating');
     if (this.lot.leader === team.code) throw new Error('You are already the highest bidder');
+    if (team.doneBuying) throw new Error("You've finished buying");
     if (this.lot.passed.includes(team.code)) throw new Error('You passed on this player');
     const expected = this.nextBidAmount();
     if (!Number.isFinite(amount) || amount <= 0 || amount % 5 !== 0) throw new Error('Invalid bid amount');
@@ -514,6 +515,22 @@ export class Room {
     this.finish();
   }
 
+  // Test-only: each person's team gets a legal minimum squad from players outside the pool
+  devFillHumans() {
+    const inPool = new Set(this.queue.map((q) => q.id));
+    const used = new Set(this.activeTeams().flatMap((t) => t.squad.map((x) => x.id)));
+    const { minSquad, roleMin } = this.settings;
+    for (const t of this.humanTeams()) {
+      const plan = { ...roleMin };
+      plan.BAT += Math.max(0, minSquad - t.squad.length - Object.values(roleMin).reduce((a, b) => a + b, 0));
+      for (const [role, n] of Object.entries(plan)) {
+        for (const p of PLAYERS.filter((x) => x.role === role && !x.overseas && !inPool.has(x.id) && !used.has(x.id)).slice(0, n)) {
+          used.add(p.id); t.squad.push({ id: p.id, price: 30, role }); t.purse -= 30;
+        }
+      }
+    }
+  }
+
   finish() {
     // computer teams lock their best XI straight away
     for (const t of Object.values(this.teams)) {
@@ -525,6 +542,62 @@ export class Room {
     this.lot = null;
     this.paused = false;
     this.addLog({ kind: 'info', text: 'Auction complete' });
+  }
+
+  // ---------- finishing early ----------
+  // A person's team is done when it's full, broke, or the owner tapped "Done buying"
+  humanTeams() { return this.activeTeams().filter((t) => this.isHumanTeam(t.code)); }
+  humansDone() {
+    const humans = this.humanTeams();
+    return humans.length > 0 && humans.every((t) => t.doneBuying || t.squad.length >= this.settings.maxSquad || t.purse < MIN_BASE);
+  }
+
+  // Owner is happy with the squad: stop bidding for the rest of the auction (squad rules must be met)
+  doneBuying(memberId, now = Date.now()) {
+    if (this.phase !== 'auction') throw new Error('No auction running');
+    const m = this.members.get(memberId);
+    const team = m && this.teams[m.team];
+    if (!team) throw new Error('You are spectating');
+    const s = this.settings;
+    if (team.squad.length < s.minSquad) throw new Error(`Buy at least ${s.minSquad} players first`);
+    const need = unmet(roleCounts(team.squad), s.roleMin);
+    const list = Object.entries(need).map(([r, n]) => `${n} ${r}`).join(', ');
+    if (list) throw new Error(`Squad rules still need ${list}`);
+    if (this.lot?.status === 'live' && this.lot.leader === team.code) throw new Error('Wait until this lot closes, you hold the bid');
+    team.doneBuying = true;
+    if (this.lot?.status === 'live' && !this.lot.passed.includes(team.code)) { this.lot.passed.push(team.code); this.checkAllPassed(now); }
+    this.addLog({ kind: 'info', text: `${team.code} finished buying` });
+  }
+
+  // Settle every remaining lot among the computer teams in one go, then end the auction.
+  // Each lot goes up the bid ladder: the keenest computer that still wants the next price takes it.
+  fastForward(now = Date.now()) {
+    let lots = 0, sold = 0;
+    for (let guard = 0; guard < 2000 && this.phase === 'auction'; guard++) {
+      // the lot already on the block continues from its current bid
+      if (!(guard === 0 && this.lot?.status === 'live')) this.openNextLot(now);
+      if (this.phase !== 'auction') break;
+      const lot = this.lot;
+      const p = PLAYER_BY_ID.get(lot.id);
+      const bots = this.activeTeams().filter((t) => !this.isHumanTeam(t.code));
+      const want = new Map(bots.map((t) => [t.code, this.botValuation(t, p)]));
+      for (let step = 0; step < 400; step++) {
+        const next = this.nextBidAmount();
+        const best = bots
+          .filter((t) => t.code !== lot.leader && want.get(t.code) >= next && !this.bidBlocker(t, next))
+          .sort((a, b) => want.get(b.code) - want.get(a.code))[0];
+        if (!best) break;
+        lot.bid = next; lot.leader = best.code;
+        lot.history.push({ team: best.code, amount: next, t: now });
+      }
+      this.hammer(now);
+      lots++;
+      if (lot.status === 'sold') sold++;
+    }
+    this.nextLotAt = now;
+    if (this.phase === 'auction') this.finish(); // guard tripped; never leave the room stuck
+    if (lots) this.addLog({ kind: 'info', text: `Fast-forward: computers settled the last ${lots} players (${sold} sold)` });
+    return { lots, sold };
   }
 
   // ---------- post-auction trading ----------
@@ -656,9 +729,13 @@ export class Room {
   tick(now = Date.now()) {
     if (this.phase !== 'auction' || this.paused) return false;
     if (!this.lot || this.lot.status !== 'live') {
-      if (now >= this.nextLotAt) { this.openNextLot(now); return true; }
-      return false;
+      if (now < this.nextLotAt) return false;
+      // every person is done buying: computers settle the rest instantly
+      if (this.humansDone()) this.fastForward(now);
+      else this.openNextLot(now);
+      return true;
     }
+    if (this.humansDone()) { this.fastForward(now); return true; }
     if (now >= this.lot.endsAt) { this.hammer(now); return true; }
     const before = this.lot.endsAt;
     const acted = this.botsAct(now);
