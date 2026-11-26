@@ -88,6 +88,13 @@ export default function Auction({ room }: { room: RoomState }) {
   const ms = useCountdown(room);
   const [drawer, setDrawer] = useState<string | null>(null);
   const [tab, setTab] = useState<'feed' | 'next' | 'squad' | 'chat'>('feed');
+  const [sheet, setSheet] = useState(false); // phones: results / chat / up next / squad and host controls in a pull-up sheet
+  // unread chat for the More button (phones read chat inside the sheet)
+  const chatList = room.chat || [];
+  const lastChatId = chatList.length ? chatList[chatList.length - 1].id : '';
+  const [chatSeen, setChatSeen] = useState(lastChatId);
+  useEffect(() => { if (sheet && tab === 'chat') setChatSeen(lastChatId); }, [sheet, tab, lastChatId]);
+  const chatUnread = (() => { const i = chatList.findIndex((m) => m.id === chatSeen); return chatList.slice(i + 1).filter((m) => m.from !== memberId).length; })();
   const [muted, setMutedState] = useState(isMuted());
   const busy = useRef(false);
 
@@ -190,14 +197,33 @@ export default function Auction({ room }: { room: RoomState }) {
             <TeamLogo code={myTeam.code} size={20} /> {money(myTeam.purse)} · {myTeam.squad.length} players
           </button>
         )}
+        {/* phones: results / chat / up next / squad as one icon group; each opens its panel as a sheet */}
+        <div className="a-tabs only-mobile" role="tablist" aria-label="Auction panels">
+          {PANEL_TABS.map((t) => (
+            <button
+              key={t.key}
+              role="tab"
+              aria-selected={sheet && tab === t.key}
+              aria-label={t.label}
+              title={t.label}
+              className={sheet && tab === t.key ? 'on' : ''}
+              disabled={t.key === 'squad' && !myTeam}
+              onClick={() => { setTab(t.key); setSheet(true); }}
+            >
+              {t.icon}
+              {t.key === 'chat' && chatUnread > 0 && <i className="tab-dot" />}
+            </button>
+          ))}
+        </div>
         <button className="icon-btn" onClick={() => { setMuted(!muted); setMutedState(!muted); }} aria-label={muted ? 'Unmute' : 'Mute'} title={muted ? 'Unmute' : 'Mute'}><SpeakerIcon muted={muted} /></button>
         {isHost && (
-          <div className="row" style={{ gap: 6 }}>
+          <div className="row host-ctrls" style={{ gap: 6 }}>
             <button className="btn btn-sm" onClick={() => host(room.paused ? 'resume' : 'pause')}>{room.paused ? 'Resume' : 'Pause'}</button>
             <HostTransfer room={room} compact />
             <button className="btn btn-sm btn-danger" onClick={() => host('end')}>End</button>
           </div>
         )}
+        {isHost && room.paused && <span className="chip chip-gold paused-chip only-mobile">Paused</span>}
         <span className="chip watch-chip" title="People watching">{room.members.filter((m) => !m.bot && !m.team && m.connected).length} watching</span>
       </div>
 
@@ -290,6 +316,25 @@ export default function Auction({ room }: { room: RoomState }) {
       </div>
 
 
+      <AnimatePresence>
+        {sheet && (
+          <>
+            <motion.div className="drawer-back only-mobile" onClick={() => setSheet(false)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+            <motion.div className="panel a-sheet only-mobile" initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }} transition={{ type: 'spring', stiffness: 320, damping: 34 }} role="dialog" aria-label="Auction details">
+              <button className="a-sheet-grip" onClick={() => setSheet(false)} aria-label="Close"><i /></button>
+              {isHost && (
+                <div className="a-sheet-host">
+                  <span className="eyebrow">Host</span>
+                  <button className="btn btn-sm" onClick={() => host(room.paused ? 'resume' : 'pause')}>{room.paused ? 'Resume' : 'Pause'}</button>
+                  <HostTransfer room={room} compact />
+                  <button className="btn btn-sm btn-danger" onClick={() => { setSheet(false); host('end'); }}>End</button>
+                </div>
+              )}
+              <SidePanel room={room} tab={tab} setTab={setTab} myTeam={myTeam} withChat />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
       <ReactionLayer />
       <Chat room={room} raised />
       {drawer && room.teams[drawer] && <SquadDrawer room={room} code={drawer} onClose={() => setDrawer(null)} />}
@@ -330,6 +375,14 @@ function DoneBuying({ room, team }: { room: RoomState; team: TeamState }) {
     </div>
   );
 }
+
+const tabIcon = (d: string) => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
+const PANEL_TABS: { key: 'feed' | 'chat' | 'next' | 'squad'; label: string; icon: JSX.Element }[] = [
+  { key: 'feed', label: 'Results', icon: tabIcon('M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01') },
+  { key: 'chat', label: 'Chat', icon: tabIcon('M4 5h16v11H8l-4 4V5z') },
+  { key: 'next', label: 'Up next', icon: tabIcon('M12 7v5l3 2M12 3a9 9 0 100 18 9 9 0 000-18z') },
+  { key: 'squad', label: 'My squad', icon: tabIcon('M16 19v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1M9.5 10a3 3 0 100-6 3 3 0 000 6zM21 19v-1a4 4 0 00-3-3.9M16 4.1a3 3 0 010 5.8') },
+];
 
 function ceremonyTags(room: RoomState, lot: Lot, p: Player): CeremonyTags {
   if (lot.status !== 'sold' || lot.bid == null) return { record: false, steal: false, war: false };
@@ -532,7 +585,7 @@ function BidBox({ lot, ms, paused, owner, bidTime }: { lot: Lot; ms: number; pau
         </div>
       )}
       {lot.history.length > 1 && (
-        <div className="row" style={{ marginTop: 10, gap: 6, flexWrap: 'wrap' }}>
+        <div className="row bid-history" style={{ marginTop: 10, gap: 6, flexWrap: 'wrap' }}>
           {lot.history.slice(-4, -1).reverse().map((h, i) => (
             <span key={i} className="chip" style={{ opacity: 1 - i * 0.18 }}><TeamLogo code={h.team} size={16} /> {money(h.amount)}</span>
           ))}
