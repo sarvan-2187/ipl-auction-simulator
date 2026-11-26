@@ -1604,7 +1604,7 @@ body { font-feature-settings: 'ss01' off; }
 @media (min-width: 1025px) {
   .lp-hero { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 28px; padding: 48px 0 84px; align-content: center; }
   .lp-hero-copy { justify-items: center; width: 100%; max-width: 640px; }
-  .lp-hero .hero-title { font-size: clamp(72px, 8vw, 112px); line-height: 0.95; }
+  .lp-hero .hero-title { font-size: clamp(52px, 5.6vw, 80px); line-height: 1; }
   .lp-hero .hero-title { white-space: nowrap; }
   .lp-hero .hero-title .gold-grad { display: inline-block; margin-left: 0.2em; }
   .lp-hero .hero-title br { display: none; }
