@@ -1603,12 +1603,12 @@ body { font-feature-settings: 'ss01' off; }
 /* desktop hero: one centred column, pill controls, no card boxes */
 @media (min-width: 1025px) {
   .lp-hero { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 28px; padding: 48px 0 84px; align-content: center; }
-  .lp-hero-copy { justify-items: center; width: 100%; max-width: 640px; }
+  .lp-hero-copy { justify-items: center; width: 100%; max-width: 720px; }
   .lp-hero .hero-title { font-size: clamp(52px, 5.6vw, 80px); line-height: 1; }
   .lp-hero .hero-title { white-space: nowrap; }
   .lp-hero .hero-title .gold-grad { display: inline-block; margin-left: 0.2em; }
   .lp-hero .hero-title br { display: none; }
-  .lp-hero .hero-sub { max-width: 520px; }
+  .lp-hero .hero-sub { max-width: 680px; text-wrap: balance; }
   .lp-hero .home-card { background: none; border: 0; box-shadow: none; backdrop-filter: none; padding: 0; margin: 6px 0 0; width: 100%; max-width: 460px; }
   .lp-hero .home-card .tabs, .lp-hero .home-card .seg { border-radius: 999px; }
   .lp-hero .home-card .tabs button { border-radius: 999px; }
