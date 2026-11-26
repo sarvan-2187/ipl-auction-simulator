@@ -56,7 +56,7 @@ export class Window {
 export const LIMITS = {
   // HTTP: pages and API calls (static files are cheap and long-cached, they get a much bigger allowance)
   httpRate: 2, httpBurst: 60,
-  staticRate: 40, staticBurst: 600,
+  staticRate: 120, staticBurst: 2500, // ~150 files per page load; a household of friends shares one IP
   // Socket.IO
   connectionsPerIp: 24, // a household on one Wi-Fi with several tabs stays well under this
   eventRate: 12, eventBurst: 40, // per socket; a frantic bidder sends ~5/s
@@ -102,7 +102,8 @@ export function httpLimiter() {
   const files = new Buckets(LIMITS.staticRate, LIMITS.staticBurst);
   setInterval(() => { pages.sweep(); files.sweep(); }, 60e3).unref();
   return (req, res, next) => {
-    if (req.path === '/api/health' || req.path === '/healthz') return next(); // uptime monitors
+    // uptime monitors, and the game socket (which has its own limits in socketGuard)
+    if (req.path === '/api/health' || req.path === '/healthz' || req.path.startsWith('/socket.io/')) return next();
     const ok = (STATIC.test(req.path) ? files : pages).take(req.ip || 'unknown');
     if (ok) return next();
     res.setHeader('Retry-After', '10');
