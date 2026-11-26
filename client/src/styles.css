@@ -1615,7 +1615,7 @@ body { font-feature-settings: 'ss01' off; }
   .lp-hero .home-card .eyebrow { display: none; }
   .lp-hero .home-card .input { border-radius: 999px; height: 54px; text-align: center; padding: 0 22px; }
   .lp-hero .home-card .home-go { border-radius: 999px; }
-  .lp-hero .home-note { text-align: center; }
+  .lp-hero .home-note { display: none; }
   /* live auction as a slim pill */
   .lp-hero-demo { max-width: 640px; }
   .lp-hero .demo { display: flex; align-items: center; gap: 18px; padding: 10px 14px 10px 10px; border-radius: 999px; min-height: 0; }
