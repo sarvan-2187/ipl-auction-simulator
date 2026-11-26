@@ -34,7 +34,6 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
             Pick a franchise, bring your friends and fight over every star in a live auction. Real purses, overseas caps, squad rules and the hammer.
           </motion.p>
           <EntryForm initialCode={initialCode} formRef={formRef} />
-          <InstallButton className="hero-install" />
         </div>
         <motion.div className="lp-hero-demo" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4, duration: 0.6 }}>
           <AuctionDemo />
@@ -114,7 +113,7 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
             <h2 className="display">Ready for the hammer?</h2>
             <p>Free, no sign-up, works on any phone or laptop. Make a room and share the code.</p>
           </div>
-          <div className="lp-cta-btns"><button className="btn btn-gold" onClick={toTop}>Start an auction</button><InstallButton /></div>
+          <div className="lp-cta-btns"><button className="btn btn-gold" onClick={toTop}>Start an auction</button><InstallButton iconOnly /></div>
         </InView>
       </section>
 
@@ -175,9 +174,12 @@ function EntryForm({ initialCode, formRef }: { initialCode: string | null; formR
           </label>
         )}
       </div>
-      <button className="btn btn-gold home-go" disabled={busy}>
+      <div className="go-row">
+        <button className="btn btn-gold home-go" disabled={busy}>
         {busy ? 'Connecting…' : tab === 'create' ? 'Create auction room' : 'Enter auction room'}
       </button>
+        <InstallButton iconOnly />
+      </div>
       <p className="home-note">
         {tab === 'create' ? 'You become the host and share the code. Everyone picks a franchise, then you start the hammer.' : 'Ask the host for the 5-letter code, or open the invite link they shared.'}
       </p>
