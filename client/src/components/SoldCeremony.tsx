@@ -12,7 +12,8 @@ const T_STAMP = 0.95;
 
 export interface CeremonyTags { record: boolean; steal: boolean; war: boolean }
 
-export default function SoldCeremony({ lot, player, mine, roomCode, tags }: { lot: Lot; player: Player; mine: boolean; roomCode: string; tags: CeremonyTags }) {
+// `quiet`: no sound or confetti (used by the looping demo on the landing page)
+export default function SoldCeremony({ lot, player, mine, roomCode, tags, quiet = false }: { lot: Lot; player: Player; mine: boolean; roomCode: string; tags: CeremonyTags; quiet?: boolean }) {
   const sold = lot.status === 'sold';
   const team = getTeam(lot.leader);
   const c1 = team?.primary || '#262626';
@@ -33,6 +34,7 @@ export default function SoldCeremony({ lot, player, mine, roomCode, tags }: { lo
 
   // sound + confetti synced to the stamp landing
   useEffect(() => {
+    if (quiet) return;
     sfx.gavel();
     sfx.whoosh(T_TICKET);
     sfx.stamp(T_STAMP);

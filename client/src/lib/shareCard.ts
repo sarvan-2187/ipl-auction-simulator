@@ -50,9 +50,15 @@ export async function renderXICard(team: TeamState, ids: number[], ownerName: st
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
 
-  // background: black with one team-coloured glow
-  ctx.fillStyle = '#000';
+  // background: outfield green with mowing stripes and one team-coloured glow
+  const turf = ctx.createLinearGradient(0, 0, 0, H);
+  turf.addColorStop(0, '#0c2a1a');
+  turf.addColorStop(0.6, '#071a0f');
+  turf.addColorStop(1, '#041008');
+  ctx.fillStyle = turf;
   ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  for (let x = 0; x < W; x += 120) ctx.fillRect(x, 0, 60, H);
   const glow = ctx.createRadialGradient(W / 2, -120, 40, W / 2, -120, 900);
   glow.addColorStop(0, info.primary + 'cc');
   glow.addColorStop(1, 'rgba(0,0,0,0)');
@@ -62,7 +68,7 @@ export async function renderXICard(team: TeamState, ids: number[], ownerName: st
   // header
   const logo = await load(`/teams/${team.code}.svg`);
   if (logo) ctx.drawImage(logo, 56, 52, 112, 112);
-  ctx.fillStyle = '#a3a3a3';
+  ctx.fillStyle = '#a8b9a7';
   ctx.font = '600 22px Geist, sans-serif';
   (ctx as any).letterSpacing = '4px';
   ctx.fillText('PLAYING XI', 190, 84);
@@ -70,7 +76,7 @@ export async function renderXICard(team: TeamState, ids: number[], ownerName: st
   ctx.fillStyle = '#fff';
   fitFont(ctx, info.name, 560, 54, 34);
   ctx.fillText(fitText(ctx, info.name, 560), 188, 136);
-  ctx.fillStyle = '#a3a3a3';
+  ctx.fillStyle = '#a8b9a7';
   ctx.font = '500 26px Geist, sans-serif';
   ctx.fillText(fitText(ctx, `Picked by ${ownerName}`, 560), 190, 174);
 
@@ -82,7 +88,7 @@ export async function renderXICard(team: TeamState, ids: number[], ownerName: st
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#a3a3a3';
+  ctx.fillStyle = '#a8b9a7';
   ctx.font = '600 18px Geist, sans-serif';
   (ctx as any).letterSpacing = '3px';
   ctx.fillText('XI RATING', W - 163, 88);
@@ -239,14 +245,14 @@ export async function renderSquadCard(team: TeamState, ownerName: string, roomCo
   // team background: colour gradient + the franchise pattern
   const bg = ctx.createLinearGradient(0, 0, W, H);
   bg.addColorStop(0, info.primary);
-  bg.addColorStop(1, '#050505');
+  bg.addColorStop(1, '#041008');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   const pattern = await load(`/teams/${team.code}-bg.svg`);
   if (pattern) { ctx.globalAlpha = 0.18; ctx.drawImage(pattern, 0, 0, W, H); ctx.globalAlpha = 1; }
   const shade = ctx.createLinearGradient(0, 0, 0, H);
   shade.addColorStop(0, 'rgba(0,0,0,0.15)');
-  shade.addColorStop(1, 'rgba(0,0,0,0.65)');
+  shade.addColorStop(1, 'rgba(2,10,5,0.65)');
   ctx.fillStyle = shade;
   ctx.fillRect(0, 0, W, H);
 

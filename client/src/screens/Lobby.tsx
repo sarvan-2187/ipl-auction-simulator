@@ -97,7 +97,7 @@ export default function Lobby({ room }: { room: RoomState }) {
             <div className="row" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
               <div className="eyebrow">Auction format {isHost ? '' : '· set by host'}</div>
             </div>
-            <div className="seg set-preset" style={{ marginBottom: 6 }}>
+            <div className="seg slide set-preset" style={{ marginBottom: 6, ['--n' as any]: PRESETS.length, ['--i' as any]: Math.max(0, PRESETS.findIndex((p) => p.key === s.pool)) }}>
               {PRESETS.map((p) => (
                 <button key={p.key} className={s.pool === p.key ? 'on' : ''} onClick={() => isHost && set(p.patch)} disabled={!isHost}>
                   {p.label}<small>{p.sub}</small>
@@ -139,7 +139,7 @@ export default function Lobby({ room }: { room: RoomState }) {
             <div className="setting set-a">
               <label>Computer difficulty<small>{CPU_HELP[s.cpuLevel || 'medium']}</small></label>
               {isHost ? (
-                <div className="seg" style={{ width: 240 }}>
+                <div className="seg slide" style={{ width: 240, ['--n' as any]: 3, ['--i' as any]: Math.max(0, ['easy', 'medium', 'hard'].indexOf(s.cpuLevel || 'medium')) }}>
                   {(['easy', 'medium', 'hard'] as const).map((lv) => (
                     <button key={lv} className={(s.cpuLevel || 'medium') === lv ? 'on' : ''} onClick={() => set({ cpuLevel: lv })}>{lv[0].toUpperCase() + lv.slice(1)}</button>
                   ))}
@@ -153,7 +153,7 @@ export default function Lobby({ room }: { room: RoomState }) {
             <div className="setting set-b">
               <label>Accelerated round<small>Unsold players come back once at the end</small></label>
               {isHost ? (
-                <div className="seg" style={{ width: 140 }}>
+                <div className="seg slide" style={{ width: 140, ['--n' as any]: 2, ['--i' as any]: s.unsoldRound ? 0 : 1 }}>
                   <button className={s.unsoldRound ? 'on' : ''} onClick={() => set({ unsoldRound: true })}>On</button>
                   <button className={!s.unsoldRound ? 'on' : ''} onClick={() => set({ unsoldRound: false })}>Off</button>
                 </div>
@@ -162,7 +162,7 @@ export default function Lobby({ room }: { room: RoomState }) {
             <div className="setting set-b">
               <label>Trading window<small>After the auction, owners can swap players and cash before locking their XI</small></label>
               {isHost ? (
-                <div className="seg" style={{ width: 140 }}>
+                <div className="seg slide" style={{ width: 140, ['--n' as any]: 2, ['--i' as any]: s.trading !== false ? 0 : 1 }}>
                   <button className={s.trading !== false ? 'on' : ''} onClick={() => set({ trading: true })}>On</button>
                   <button className={s.trading === false ? 'on' : ''} onClick={() => set({ trading: false })}>Off</button>
                 </div>

@@ -4,7 +4,8 @@ import { allPlayers, allTeams, increment, money, playerPhoto, ROLE_LABEL, teamPa
 import { createRoom, joinRoom, getName, setName } from '../lib/socket';
 import { GavelIcon, TeamLogo, useToast } from '../components/ui';
 import { sfx } from '../lib/sound';
-import type { Player } from '../lib/types';
+import type { Lot, Player } from '../lib/types';
+import SoldCeremony from '../components/SoldCeremony';
 
 export default function Home({ initialCode }: { initialCode: string | null }) {
   const players = allPlayers();
@@ -172,7 +173,7 @@ function EntryForm({ initialCode, formRef }: { initialCode: string | null; formR
       <div className="home-fields">
         <label className="col" style={{ gap: 6 }}>
           <span className="eyebrow">Your name</span>
-          <input className="input" value={name} maxLength={18} onChange={(e) => setNameState(e.target.value)} placeholder="e.g. Sarvan" autoComplete="nickname" />
+          <input className="input" value={name} maxLength={18} onChange={(e) => setNameState(e.target.value)} placeholder="e.g. Hardik Pandya" autoComplete="nickname" />
         </label>
         {tab === 'join' && (
           <label className="col" style={{ gap: 6 }}>
@@ -220,7 +221,7 @@ function AuctionDemo() {
     const end = 500 + seq.length * step;
     [6, 5, 4, 3].forEach((c, k) => at(end + k * 260, () => setClock(c)));
     at(end + 1200, () => setPhase('sold'));
-    at(end + 3400, () => setI((x) => x + 1));
+    at(end + 4600, () => setI((x) => x + 1));
     return () => { alive = false; timers.forEach(clearTimeout); };
   }, [i, p, teams, reduce]);
 
@@ -274,10 +275,16 @@ function AuctionDemo() {
         ))}
       </div>
       <AnimatePresence>
-        {phase === 'sold' && leader && (
-          <motion.div className="demo-stamp" initial={{ scale: 2.4, opacity: 0, rotate: -18 }} animate={{ scale: 1, opacity: 1, rotate: -10 }} exit={{ opacity: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 18 }}>
-            Sold · {leader.code}
-          </motion.div>
+        {phase === 'sold' && leader && top && (
+          <SoldCeremony
+            key={`sold-${p.id}-${i}`}
+            quiet
+            lot={{ id: p.id, set: 'Marquee', base: p.base, bid: top.amount, leader: leader.code, endsAt: 0, history: [], bidCount: bids.length, status: 'sold', passed: [], n: (i % 99) + 1, next: null, remaining: 0 } as Lot}
+            player={p}
+            mine={false}
+            roomCode="DEMO"
+            tags={{ record: false, steal: false, war: bids.length >= 8 }}
+          />
         )}
       </AnimatePresence>
     </div>
