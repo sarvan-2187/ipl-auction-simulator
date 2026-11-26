@@ -150,3 +150,19 @@ test('playing XI: auto-pick is legal, bots lock on finish, humans can set and lo
   assert.equal(r.teams.KKR.xiLocked, true);
   assert.throws(() => r.setXI('h', ids.slice(0, 5), true), /Pick 11/);
 });
+
+test('computer difficulty: easy values players lower than medium, medium lower than hard', () => {
+  const vals = {};
+  for (const level of ['easy', 'medium', 'hard']) {
+    const r = new Room('DIF' + level, 'h');
+    r.join('h', 'Host'); r.pickTeam('h', 'CSK'); r.addBot('h', 'MI');
+    r.updateSettings('h', { cpuLevel: level });
+    assert.equal(r.settings.cpuLevel, level);
+    r.seed = 1234; // same randomness for each level
+    r.start('h', 0); r.tick(3000);
+    const star = [...PLAYER_BY_ID.values()].find((p) => p.name === 'Virat Kohli');
+    vals[level] = r.botValuation(r.teams.MI, star);
+  }
+  assert.ok(vals.easy < vals.medium && vals.medium < vals.hard, JSON.stringify(vals));
+  assert.throws(() => new Room('X', 'h').updateSettings('f', { cpuLevel: 'hard' }), /host/);
+});

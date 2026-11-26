@@ -5,6 +5,12 @@ import type { RoomState, Settings } from '../lib/types';
 import { TeamLogo, useToast, GavelIcon } from '../components/ui';
 import { sfx } from '../lib/sound';
 
+const CPU_HELP: Record<string, string> = {
+  easy: 'Computers drop out early and often let you have players cheaply',
+  medium: 'Computers bid around fair value',
+  hard: 'Computers pay big, fight you for stars and react fast',
+};
+
 const PRESETS: { key: string; label: string; sub: string; patch: Partial<Settings> }[] = [
   { key: 'blitz', label: 'Blitz', sub: '~20 min', patch: { pool: 'blitz', minSquad: 11, maxSquad: 15, maxOverseas: 5, bidTime: 7 } },
   { key: 'quick', label: 'Quick', sub: '~45 min', patch: { pool: 'quick', minSquad: 15, maxSquad: 20, maxOverseas: 8, bidTime: 7 } },
@@ -140,6 +146,16 @@ export default function Lobby({ room }: { room: RoomState }) {
                   ) : <span className="chip" key={r}>{r} {rm[r]}</span>;
                 })}
               </div>
+            </div>
+            <div className="setting">
+              <label>Computer difficulty<small>{CPU_HELP[s.cpuLevel || 'medium']}</small></label>
+              {isHost ? (
+                <div className="seg" style={{ width: 240 }}>
+                  {(['easy', 'medium', 'hard'] as const).map((lv) => (
+                    <button key={lv} className={(s.cpuLevel || 'medium') === lv ? 'on' : ''} onClick={() => set({ cpuLevel: lv })}>{lv[0].toUpperCase() + lv.slice(1)}</button>
+                  ))}
+                </div>
+              ) : <b style={{ textTransform: 'capitalize' }}>{s.cpuLevel || 'medium'}</b>}
             </div>
             <div className="setting">
               <label>Bid clock<small>Seconds on the clock after each bid</small></label>

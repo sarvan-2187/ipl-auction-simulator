@@ -76,6 +76,7 @@ export interface Settings {
   pool: 'blitz' | 'quick' | 'standard' | 'full';
   unsoldRound: boolean;
   roleMin: Record<Role, number>;
+  cpuLevel?: 'easy' | 'medium' | 'hard';
 }
 
 export interface LogEntry {

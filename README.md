@@ -97,7 +97,7 @@ When the auction ends, every owner arranges a Playing XI on a cricket ground, ge
 
 1. **Create a room.** The host enters a name and creates a room. The room code appears at the top of the lobby.
 2. **Invite friends.** Share the code or the invite link. Everyone picks a franchise; the host can fill the rest with computer players.
-3. **Choose a format.** Blitz (about 20 minutes), Quick (about 45), Classic (about 90) or Mega (all players). The host can also change the purse, squad size, overseas limit, bid clock and squad rules.
+3. **Choose a format.** Blitz (about 20 minutes), Quick (about 45), Classic (about 90) or Mega (all players). The host can also change the purse, squad size, overseas limit, bid clock, squad rules and how tough the computer players are.
 4. **Bid.** Players come up one by one. Bid, jump bid or pass. When the clock runs out, the highest bidder wins the player.
 5. **Pick your Playing XI.** Arrange eleven players on the ground, follow the suggestions or auto-pick, then lock it in.
 6. **Compare and share.** The results screen ranks every team, highlights the biggest buys, and lets you share your XI or squad.
@@ -113,6 +113,7 @@ When the auction ends, every owner arranges a Playing XI on a cricket ground, ge
 | Purse reserve | 30 L per player you still have to buy | You can't spend money needed to complete your squad. The Bid button says how much to keep and why. |
 | Bid increments | 5 L below 1 Cr, 10 L to 2 Cr, 20 L to 5 Cr, 25 L to 10 Cr, 50 L above | Jump bids are limited to +5 Cr. |
 | Bid clock | 7 seconds | The first bid on each player gets 3 extra seconds. |
+| Computer difficulty | Medium | Easy: computers drop out early and often let you have players cheaply. Medium: they bid around fair value. Hard: they pay big, contest your bids and react faster. |
 | Playing XI | 11 players, at least 1 keeper and 5 bowling options | Missing keeper or bowling options lowers the XI rating. |
 
 ## Player ratings

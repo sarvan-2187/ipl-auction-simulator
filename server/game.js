@@ -15,9 +15,18 @@ export const DEFAULT_SETTINGS = {
   bidTime: 7, // seconds the clock resets to after each bid
   pool: 'quick', // quick | standard | full
   unsoldRound: true,
+  cpuLevel: 'medium', // computer players: easy | medium | hard
   roleMin: { BAT: 3, BOWL: 4, AR: 2, WK: 2 }, // squad rules
 };
 export const ROLES = ['BAT', 'BOWL', 'AR', 'WK'];
+// How computer players behave at each difficulty
+export const CPU_LEVELS = {
+  // easy: drop out early, often let humans have players cheaply, slow to react, rarely jump-bid
+  easy: { value: 0.62, vsHuman: 0.7, letGo: 0.35, jump: 0.25, delay: [700, 1600], spend: 0.8 },
+  medium: { value: 1, vsHuman: 1, letGo: 0, jump: 0.7, delay: [300, 1000], spend: 1 },
+  // hard: pay up, contest humans, react fast and jump-bid aggressively
+  hard: { value: 1.6, vsHuman: 1.25, letGo: 0, jump: 0.9, delay: [220, 750], spend: 1.45, pace: true },
+};
 const ROLE_FILL_ORDER = ['WK', 'BOWL', 'AR', 'BAT']; // scarce roles first when auto-assigning
 
 const rolesOf = (p) => (p.roles && p.roles.length ? p.roles : [p.role]);
@@ -217,6 +226,7 @@ export class Room {
     if (patch.bidTime != null) s.bidTime = clamp(patch.bidTime, 5, 30);
     if (patch.pool != null && POOL_SIZES[patch.pool] !== undefined) s.pool = patch.pool;
     if (patch.unsoldRound != null) s.unsoldRound = !!patch.unsoldRound;
+    if (patch.cpuLevel != null && CPU_LEVELS[patch.cpuLevel]) s.cpuLevel = patch.cpuLevel;
     if (patch.roleMin && typeof patch.roleMin === 'object') {
       const rm = { ...s.roleMin };
       for (const r of ROLES) if (patch.roleMin[r] != null) rm[r] = clamp(patch.roleMin[r], 0, 8);
@@ -492,11 +502,28 @@ export class Room {
     if (needed > 0 && this.round === 2) v = Math.max(v, p.base * 1.6);
     // Scale to purse so a 200 Cr room bids proportionally bigger than a 90 Cr room
     v *= s.purse / 12000;
+    // Difficulty: how much computers are willing to pay, especially against human bidders
+    const lvl = CPU_LEVELS[s.cpuLevel] || CPU_LEVELS.medium;
+    v *= lvl.value;
+    // hard computers pace their budget: keep enough for a strong squad rather than blowing it early
+    if (lvl.pace) {
+      const slotsLeft = Math.max(1, s.minSquad - team.squad.length);
+      const perSlot = team.purse / slotsLeft;
+      if (v > perSlot * 3.2) v = perSlot * 3.2 + (v - perSlot * 3.2) * 0.35;
+    }
+    if (this.lot && this.lot.history.some((h) => this.isHumanTeam(h.team))) v *= lvl.vsHuman;
     // Spend discipline: never commit more than a share of remaining purse to one player
     const neededSlots = Math.max(1, s.minSquad - team.squad.length);
-    const cap = neededSlots <= 3 ? team.purse - (neededSlots - 1) * MIN_BASE : Math.min(team.purse * 0.3, (team.purse / neededSlots) * 3);
+    // how much of the remaining purse one player may take also scales with difficulty
+    const cap = neededSlots <= 3 ? team.purse - (neededSlots - 1) * MIN_BASE : Math.min(team.purse * 0.3 * lvl.spend, (team.purse / neededSlots) * 3 * lvl.spend);
     const reserve = team.purse - Math.max(0, s.minSquad - team.squad.length - 1) * 50;
     return Math.max(0, Math.min(v, cap, reserve));
+  }
+
+  isHumanTeam(code) {
+    const t = this.teams[code];
+    const m = t && this.members.get(t.ownerId);
+    return !!m && !m.bot;
   }
 
   botsAct(now) {
@@ -511,9 +538,14 @@ export class Room {
       if (this.bidBlocker(team, next)) continue;
       const key = `${team.code}:${lot.history.length}`;
       if (!this.botPlans[key]) {
-        const wants = next <= this.botValuation(team, p);
+        const lvl = CPU_LEVELS[this.settings.cpuLevel] || CPU_LEVELS.medium;
+        // easy computers sometimes simply let a human have the player
+        const humanLeads = lot.leader && this.isHumanTeam(lot.leader);
+        const letGo = humanLeads && this.rnd() < lvl.letGo;
+        const wants = !letGo && next <= this.botValuation(team, p);
         // bots wait a human-ish delay, never within the last ~0.6s for fairness
-        const delay = 300 + this.rnd() * Math.min(1000, (lot.endsAt - now) * 0.5);
+        const [d0, d1] = lvl.delay;
+        const delay = d0 + this.rnd() * Math.min(d1 - d0, (lot.endsAt - now) * 0.5);
         this.botPlans[key] = { at: now + delay, wants };
       }
       const plan = this.botPlans[key];
@@ -527,7 +559,8 @@ export class Room {
       // jump-bid when the price is far below what the bot is willing to pay
       const val = this.botValuation(team, p);
       let amount = next;
-      if (val > next * 1.5 && this.rnd() < 0.85) {
+      const jumpChance = (CPU_LEVELS[this.settings.cpuLevel] || CPU_LEVELS.medium).jump;
+      if (val > next * 1.5 && this.rnd() < jumpChance) {
         const jump = Math.min(500, Math.floor(((val - next) * 0.5) / 25) * 25);
         if (jump >= 25 && !this.bidBlocker(team, next + jump)) amount = next + jump;
       }
