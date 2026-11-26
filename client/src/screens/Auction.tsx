@@ -137,7 +137,8 @@ export default function Auction({ room }: { room: RoomState }) {
     sfx.unlock();
     const r = await call('bid', { amount: next + extra, seen: lot.bid });
     busy.current = false;
-    if (!r.ok) { toast(r.error || 'Bid failed', true); sfx.error(); }
+    // a double tap after our own bid landed is harmless, stay quiet
+    if (!r.ok && !/already the highest/.test(r.error || '')) { toast(r.error || 'Bid failed', true); sfx.error(); }
   }, [block, next, lot, toast]);
 
   const pass = useCallback(async () => {

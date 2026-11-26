@@ -55,6 +55,8 @@ const SOLD_PAUSE_MS = 4800; // time for the gavel + ticket + stamp ceremony
 const UNSOLD_PAUSE_MS = 2600;
 const BOT_NAMES = 'ABCDEFGHIJ'.split('').map((l) => `Computer ${l}`);
 
+export const lakhsText = (l) => (l < 100 ? `₹${l} L` : `₹${+(l / 100).toFixed(2)} Cr`);
+
 export function increment(bid) {
   if (bid < 100) return 5;
   if (bid < 200) return 10;
@@ -373,7 +375,7 @@ export class Room {
     this.botPlans = {};
   }
 
-  // `seen` is the bid the client was looking at; protects against double-clicks racing another bid.
+  // `seen` (the bid the client was looking at) is accepted for compatibility; stale amounts are handled below.
   // `amount` may be a jump bid above the next increment.
   placeBid(memberId, amount, now = Date.now(), seen) {
     if (this.phase !== 'auction' || !this.lot || this.lot.status !== 'live') throw new Error('No live lot');
@@ -383,9 +385,13 @@ export class Room {
     if (!team) throw new Error('You are spectating');
     if (this.lot.leader === team.code) throw new Error('You are already the highest bidder');
     const expected = this.nextBidAmount();
-    if (seen !== undefined && seen !== this.lot.bid) throw new Error('Someone bid first, try again');
-    if (seen === undefined && amount !== expected) throw new Error('Someone bid first, try again');
-    if (!Number.isFinite(amount) || amount < expected || amount % 5 !== 0) throw new Error('Invalid bid amount');
+    if (!Number.isFinite(amount) || amount <= 0 || amount % 5 !== 0) throw new Error('Invalid bid amount');
+    if (amount < expected) {
+      // A rival's bid landed while ours was in flight. A paddle raise means "the next bid",
+      // so follow them by one step; only refuse if the price ran further than that.
+      if (expected - amount > increment(amount)) throw new Error(`Price moved to ${lakhsText(expected)}, bid again`);
+      amount = expected;
+    }
     if (amount > expected + 500) throw new Error('Jump bids are limited to +5 Cr');
     const block = this.bidBlocker(team, amount);
     if (block) throw new Error(block);

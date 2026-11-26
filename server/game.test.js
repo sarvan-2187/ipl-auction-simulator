@@ -28,8 +28,14 @@ test('bid validation: stale amounts, self-outbid, purse reserve', () => {
   const base = r.lot.base;
   r.placeBid('h', base, t);
   assert.throws(() => r.placeBid('h', base + increment(base), t), /already/);
-  assert.throws(() => r.placeBid('f', base, t), /Someone bid first/);
-  r.placeBid('f', base + increment(base), t);
+  // stale tap (Friend saw no bid yet): follows Host by one step instead of failing
+  r.placeBid('f', base, t, null);
+  assert.equal(r.lot.leader, 'MI');
+  assert.equal(r.lot.bid, base + increment(base));
+  // price ran two steps past the tap: refused with the new price
+  r.placeBid('h', r.nextBidAmount(), t);
+  r.placeBid('f', r.nextBidAmount(), t);
+  assert.throws(() => r.placeBid('h', base, t, null), /Price moved/);
   r.teams.CSK.purse = 17 * 30 + 1; // can only afford reserve
   assert.throws(() => r.placeBid('h', r.nextBidAmount(), t), /purse/);
 });
