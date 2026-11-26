@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Chat from '../components/Chat';
 import { AnimatePresence, motion } from 'framer-motion';
 import SoldCeremony, { type CeremonyTags } from '../components/SoldCeremony';
 import { bestRoleFor, ratingAs, roleCounts, unmet, ROLES, getPlayer, getTeam, money, playerPhoto, ROLE_LABEL, teamPattern } from '../lib/data';
@@ -84,7 +85,7 @@ export default function Auction({ room }: { room: RoomState }) {
   const player = lot ? getPlayer(lot.id) : null;
   const ms = useCountdown(room);
   const [drawer, setDrawer] = useState<string | null>(null);
-  const [tab, setTab] = useState<'feed' | 'next' | 'squad'>('feed');
+  const [tab, setTab] = useState<'feed' | 'next' | 'squad' | 'chat'>('feed');
   const [muted, setMutedState] = useState(isMuted());
   const busy = useRef(false);
 
@@ -276,11 +277,12 @@ export default function Auction({ room }: { room: RoomState }) {
 
         {/* ---------- right: feed ---------- */}
         <aside className="panel side right">
-          <SidePanel room={room} tab={tab} setTab={setTab} myTeam={myTeam} />
+          <SidePanel room={room} tab={tab} setTab={setTab} myTeam={myTeam} withChat />
         </aside>
       </div>
 
 
+      <Chat room={room} raised />
       {drawer && room.teams[drawer] && <SquadDrawer room={room} code={drawer} onClose={() => setDrawer(null)} />}
     </div>
   );
@@ -497,15 +499,23 @@ function BidBox({ lot, ms, paused, owner, bidTime }: { lot: Lot; ms: number; pau
   );
 }
 
-function SidePanel({ room, tab, setTab, myTeam }: { room: RoomState; tab: 'feed' | 'next' | 'squad'; setTab: (t: 'feed' | 'next' | 'squad') => void; myTeam?: TeamState }) {
+function SidePanel({ room, tab: rawTab, setTab, myTeam, withChat = false }: { room: RoomState; tab: 'feed' | 'next' | 'squad' | 'chat'; setTab: (t: 'feed' | 'next' | 'squad' | 'chat') => void; myTeam?: TeamState; withChat?: boolean }) {
+  const tab = !withChat && rawTab === 'chat' ? 'feed' : rawTab;
   const sold = room.log.filter((l) => l.kind !== 'info').slice().reverse();
+  const chat = room.chat || [];
+  const lastChat = chat.length ? chat[chat.length - 1].id : '';
+  const [seenChat, setSeenChat] = useState(lastChat);
+  useEffect(() => { if (tab === 'chat') setSeenChat(lastChat); }, [tab, lastChat]);
+  const chatUnread = (() => { const i = chat.findIndex((m) => m.id === seenChat); return chat.slice(i + 1).filter((m) => m.from !== memberId).length; })();
   return (
     <>
       <div className="sidepanel-tabs" role="tablist">
         <button className={tab === 'feed' ? 'on' : ''} onClick={() => setTab('feed')}>Results</button>
+        {withChat && <button className={tab === 'chat' ? 'on' : ''} onClick={() => setTab('chat')}>Chat{chatUnread > 0 && tab !== 'chat' ? <i className="tab-dot" /> : null}</button>}
         <button className={tab === 'next' ? 'on' : ''} onClick={() => setTab('next')}>Up next</button>
         <button className={tab === 'squad' ? 'on' : ''} onClick={() => setTab('squad')} disabled={!myTeam}>My squad</button>
       </div>
+      {tab === 'chat' ? <Chat room={room} inline /> : (
       <div className="side-body">
         {tab === 'feed' && (sold.length ? sold.map((l, i) => {
           const p = l.id ? getPlayer(l.id) : null;
@@ -552,6 +562,7 @@ function SidePanel({ room, tab, setTab, myTeam }: { room: RoomState; tab: 'feed'
           );
         }) : <div className="dim" style={{ padding: 16, textAlign: 'center' }}>No players yet. Go get someone!</div>)}
       </div>
+      )}
     </>
   );
 }

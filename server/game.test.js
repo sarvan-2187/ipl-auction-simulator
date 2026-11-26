@@ -166,3 +166,18 @@ test('computer difficulty: easy values players lower than medium, medium lower t
   assert.ok(vals.easy < vals.medium && vals.medium < vals.hard, JSON.stringify(vals));
   assert.throws(() => new Room('X', 'h').updateSettings('f', { cpuLevel: 'hard' }), /host/);
 });
+
+test('room chat: trims, caps length, rate-limits, keeps the last 60', () => {
+  const r = new Room('CHAT1', 'h');
+  r.join('h', 'Host'); r.join('f', 'Friend');
+  const m = r.addChat('h', '   hello\n  world  ', 1000);
+  assert.equal(m.text, 'hello world');
+  assert.equal(r.addChat('f', 'x'.repeat(500), 1000).text.length, 240);
+  assert.throws(() => r.addChat('h', '   ', 1000), /empty/);
+  assert.throws(() => r.addChat('stranger', 'hi', 1000), /Not in room/);
+  for (let i = 0; i < 5; i++) r.addChat('h', 'spam ' + i, 2000 + i);
+  assert.throws(() => r.addChat('h', 'one more', 2100), /Slow down/);
+  for (let i = 0; i < 80; i++) r.addChat('f', 'm' + i, 100000 + i * 3000);
+  assert.equal(r.publicState().chat.length, 60);
+  assert.ok(!('_chatTimes' in r.publicState().members[0]));
+});

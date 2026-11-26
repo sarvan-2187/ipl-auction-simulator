@@ -153,6 +153,7 @@ export class Room {
     this.paused = false;
     this.pausedRemaining = 0;
     this.log = [];
+    this.chat = []; // last 60 messages
     this.seed = Math.floor(Math.random() * 2 ** 31);
     this.rnd = mulberry32(this.seed);
     this.version = 0;
@@ -249,6 +250,21 @@ export class Room {
     const p = PLAYER_BY_ID.get(entry.id);
     if (!rolesOf(p).includes(role)) throw new Error(`${p.name} can't play as ${role}`);
     entry.role = role;
+  }
+
+  // Text chat inside the room
+  addChat(memberId, text, now = Date.now()) {
+    const m = this.members.get(memberId);
+    if (!m) throw new Error('Not in room');
+    const clean = String(text || '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 240);
+    if (!clean) throw new Error('Message is empty');
+    m._chatTimes = (m._chatTimes || []).filter((t) => now - t < 10000);
+    if (m._chatTimes.length >= 6) throw new Error('Slow down a little');
+    m._chatTimes.push(now);
+    const msg = { id: `${now.toString(36)}${Math.random().toString(36).slice(2, 6)}`, t: now, from: memberId, name: m.name, team: m.team || null, text: clean };
+    this.chat.push(msg);
+    if (this.chat.length > 60) this.chat.shift();
+    return msg;
   }
 
   assertHost(id) { if (id !== this.hostId) throw new Error('Only the host can do that'); }
@@ -584,7 +600,7 @@ export class Room {
       hostId: this.hostId,
       phase: this.phase,
       settings: this.settings,
-      members: [...this.members.values()],
+      members: [...this.members.values()].map(({ _chatTimes, ...m }) => m),
       teams: this.teams,
       lot,
       paused: this.paused,
@@ -592,6 +608,7 @@ export class Room {
       progress: { done: Math.max(0, this.idx), total: this.queue.length },
       upcoming,
       log: this.log.slice(-25),
+      chat: this.chat.slice(-60),
       serverNow: now,
       nextLotAt: this.nextLotAt,
     };

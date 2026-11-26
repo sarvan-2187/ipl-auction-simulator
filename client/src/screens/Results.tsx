@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import Chat from '../components/Chat';
 import { motion } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { getPlayer, getTeam, money, teamStrength } from '../lib/data';
@@ -83,6 +84,7 @@ export default function Results({ room }: { room: RoomState }) {
           <button className="btn btn-sm" onClick={() => setMode('results')}>See results →</button>
         </div>
         <XIBuilder room={room} team={myTeam} onDone={() => setMode('results')} />
+        <Chat room={room} />
       </div>
     );
   }
@@ -174,6 +176,7 @@ export default function Results({ room }: { room: RoomState }) {
           </motion.div>
         </>
       )}
+      <Chat room={room} />
     </div>
   );
 }

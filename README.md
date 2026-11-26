@@ -74,6 +74,7 @@ When the auction ends, every owner arranges a Playing XI on a cricket ground, ge
 - Five-letter room codes and invite links; works on phones, tablets and laptops.
 - All ten franchises with their names, colours and logos.
 - Computer players (Computer A, Computer B and so on) fill any empty franchise and bid sensibly for the roles they need.
+- Room chat: text chat in the lobby, during the auction and on the results screen, with quick replies, unread badges and spam protection.
 - Refreshing or dropping connection puts you straight back in your seat. Leaving a lobby frees your franchise; if the host leaves, hosting passes on.
 
 **The auction**

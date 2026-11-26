@@ -168,6 +168,7 @@ io.on('connection', (socket) => {
   act('rematch', () => room.rematch(memberId));
   act('setRole', ({ id, role }) => room.setRole(memberId, id, role));
   act('setXI', ({ ids, lock }) => room.setXI(memberId, ids, !!lock));
+  act('chat', ({ text }) => { room.addChat(memberId, text); });
   act('rename', ({ name }) => {
     const m = room.members.get(memberId);
     if (m && name) m.name = String(name).slice(0, 18);

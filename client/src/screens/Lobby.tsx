@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import Chat from '../components/Chat';
 import { allTeams, money, teamPattern } from '../lib/data';
 import { call, memberId, leaveRoom } from '../lib/socket';
 import type { RoomState, Settings } from '../lib/types';
@@ -229,6 +230,7 @@ export default function Lobby({ room }: { room: RoomState }) {
           </div>
         </div>
       </div>
+      <Chat room={room} />
     </div>
   );
 }

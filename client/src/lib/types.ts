@@ -101,7 +101,10 @@ export interface RoomState {
   progress: { done: number; total: number };
   upcoming: number[];
   log: LogEntry[];
+  chat?: ChatMsg[];
   serverNow: number;
   nextLotAt: number;
   receivedAt: number; // client-side performance.now() when this state arrived
 }
+
+export interface ChatMsg { id: string; t: number; from: string; name: string; team: string | null; text: string }
