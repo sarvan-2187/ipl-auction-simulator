@@ -253,10 +253,11 @@ function findFeeds(html, base) {
   return [...out].slice(0, 25);
 }
 
-async function fetchText(url) {
+async function fetchText(url, retry = 1) {
   const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 20000);
   try {
     const r = await fetch(url, { headers: { 'user-agent': 'TheDugout/1.0 (IPL auction fan game; https://ipl.sarvankumar.in)', accept: 'application/json,text/html' }, signal: ctl.signal });
+    if (r.status === 429 && retry > 0) { clearTimeout(to); await new Promise((ok) => setTimeout(ok, 4000)); return fetchText(url, retry - 1); }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.text();
   } finally { clearTimeout(to); }
@@ -294,11 +295,23 @@ export async function refresh(players, { manual } = {}) {
   } else {
     const u = urls();
     probe = [];
-    try {
+    // NDTV lists the top 100 per format on its own page; use it when it reads cleanly
+    const NDTV = { batting: ['t20-batting'], bowling: ['t20-bowling'], allrounder: ['t20-all-rounder', 't20-allrounder', 't20-all-rounders'] };
+    for (const c of CATS) {
+      for (const slug of NDTV[c]) {
+        try {
+          const rows = parseRankings(await fetchText(`https://sports.ndtv.com/cricket/icc-rankings/${slug}`));
+          // sanity check: a real ranking list names several players we know
+          if (rows.length >= 15 && rows.filter((r) => matchPlayer(players, r.name)).length >= 3) { rankings[c] = rows; lastHost = 'ndtv.com'; break; }
+        } catch {}
+      }
+    }
+    if (CATS.every((c) => rankings[c].length)) { /* NDTV had everything */ } else try {
       const j = JSON.parse(await fetchText(WIKI));
       const w = parseWikipedia(j?.parse?.text || '');
-      for (const c of CATS) if (w[c].length >= 5) rankings[c] = w[c];
-      if (CATS.some((c) => rankings[c].length)) lastHost = 'wikipedia.org';
+      let used = false;
+      for (const c of CATS) if (!rankings[c].length && w[c].length >= 5) { rankings[c] = w[c]; used = true; }
+      if (used) lastHost = lastHost ? lastHost + ' + wikipedia.org' : 'wikipedia.org';
     } catch (e) { errors.push(`wikipedia: ${e.message}`); }
     for (const c of CATS) {
       if (rankings[c].length) continue;
