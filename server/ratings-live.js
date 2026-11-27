@@ -49,8 +49,8 @@ export function matchPlayer(players, name) {
 
 // ---------- parsing ----------
 const decode = (s) => s.replace(/&amp;/g, '&').replace(/&#0?39;|&apos;/g, "'").replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
-const nameOf = (x) => x && (x.name || x.playerName || x.fullName || x.displayName || x.player?.fullName || x.player?.name || x.player?.displayName || x.player?.shortName);
-const rankOf = (x) => +(x.rank ?? x.position ?? x.pos ?? x.ranking ?? x.currentRank);
+const nameOf = (x) => x && (x.player_name || x.PlayerName || x.Player || x.name || x.playerName || x.fullName || x.displayName || x.player?.fullName || x.player?.name || x.player?.displayName || x.player?.shortName);
+const rankOf = (x) => +(x.rank ?? x.Rank ?? x.position ?? x.pos ?? x.ranking ?? x.currentRank ?? x.no);
 // Walk any JSON value and return the longest array that looks like a ranking table
 function findRankingArray(v, depth = 0) {
   let best = [];
@@ -67,7 +67,7 @@ function fromJSON(j) {
     .sort((a, b) => a.rank - b.rank);
 }
 
-export function parseRankings(text) {
+export function parseRankings(text, { pasted = false } = {}) {
   const t = String(text || '').trim(); if (!t) return [];
   // JSON embedded in an HTML page (Next.js and similar)
   if (t[0] === '<') {
@@ -98,7 +98,7 @@ export function parseRankings(text) {
   if (rows.length >= 5) return rows;
   // plain list of names, best first
   const names = lines.filter((l) => /^[A-Za-z][A-Za-z .'’-]{2,40}$/.test(l));
-  return names.length >= 5 ? names.map((name, i) => ({ name, rank: i + 1 })) : rows;
+  return pasted && names.length >= 5 ? names.map((name, i) => ({ name, rank: i + 1 })) : rows;
 }
 
 // ---------- state ----------
@@ -159,6 +159,15 @@ export function applyRankings(players, rankings, record = true) {
   return { matched, unmatched: unmatched.length, changed: moved.length };
 }
 
+let probe = [];
+function findFeeds(html, base) {
+  const out = new Set();
+  for (const m of String(html).matchAll(/(?:https?:)?\/\/[^"'\s<>()]+|\/[A-Za-z0-9_\-\/.]*rank[^"'\s<>()]*/gi)) {
+    const u = m[0]; if (/rank|sportz|feed|api/i.test(u) && !/\.(png|jpe?g|svg|webp|css|woff2?)(\?|$)/i.test(u)) out.add(u.startsWith('/') && !u.startsWith('//') ? new URL(u, base).href : u);
+  }
+  return [...out].slice(0, 25);
+}
+
 async function fetchText(url) {
   const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 20000);
   try {
@@ -173,16 +182,18 @@ export async function refresh(players, { manual } = {}) {
   const rankings = { batting: [], bowling: [], allrounder: [] };
   const errors = [];
   if (manual) {
-    for (const c of CATS) rankings[c] = parseRankings(manual[c]);
+    for (const c of CATS) rankings[c] = parseRankings(manual[c], { pasted: true });
   } else {
     const u = urls();
     for (const c of CATS) {
       const tried = [];
       for (const url of u[c]) {
         try {
-          const rows = parseRankings(await fetchText(url));
+          const html = await fetchText(url);
+          const rows = parseRankings(html);
           if (rows.length >= 5) { rankings[c] = rows; break; }
-          tried.push('no table found');
+          tried.push('page loaded but no ranking data in it');
+          if (c === 'batting') probe = findFeeds(html, url);
         } catch (e) { tried.push(e.message); }
       }
       if (!rankings[c].length) errors.push(`${c}: ${[...new Set(tried)].join(', ')}`);
@@ -202,5 +213,6 @@ export const status = () => ({
   updatedAt: state.updatedAt, source: state.source,
   counts: Object.fromEntries(CATS.map((c) => [c, state.rankings[c]?.length || 0])),
   last: state.last,
+  probe,
   top: Object.fromEntries(CATS.map((c) => [c, (state.rankings[c] || []).slice(0, 5).map((x) => `${x.rank}. ${x.name}`)])),
 });

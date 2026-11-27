@@ -50,6 +50,7 @@
         '<p class="muted" style="margin:0 0 12px;font-size:13px">Ranked players loaded: batting ' + st.counts.batting + ', bowling ' + st.counts.bowling + ', all-rounders ' + st.counts.allrounder + '. Top-ranked players get +1 to +4 on top of their base rating. Refreshes itself daily.</p>' +
         '<button id="rt-go">Refresh from ICC now</button> <span id="rt-note" class="muted">' + esc(note) + '</span>' +
         (moved ? '<h2 style="margin-top:18px">Last changes</h2><table><thead><tr><th>Player</th><th>Was</th><th>Now</th></tr></thead><tbody>' + moved + '</tbody></table>' : '') +
+        ((st.probe || []).length ? '<details style="margin-top:12px"><summary class="muted">Data links found on the ICC page (send these to your developer)</summary><pre style="white-space:pre-wrap;font-size:11px">' + esc(st.probe.join('\n')) + '</pre></details>' : '') +
         ((st.last.unmatched || []).length ? '<p class="muted" style="font-size:12px">Not in the player pool: ' + esc(st.last.unmatched.join(', ')) + '</p>' : '') +
         '<details style="margin-top:14px"><summary class="muted">If the ICC fetch fails: paste the rankings</summary>' +
         '<p class="muted" style="font-size:12px">One block per ranking, best first. Either one name per line, or lines like "1 Suryakumar Yadav 912".</p>' +
