@@ -82,6 +82,7 @@ app.get('/api/stats', (req, res) => {
 // ---- live ratings: ICC T20I rankings feed a bonus on top of the stored base ratings ----
 ratings.initRatings(PLAYERS);
 const rebuild = () => { playersJson = JSON.stringify(PLAYERS); };
+ratings.hydrate(PLAYERS).then((ok) => { if (ok) { rebuild(); console.log('ratings restored from GitHub'); } });
 const adminOnly = (req, res, next) => {
   res.set('Cache-Control', 'no-store');
   if (!analytics.statsEnabled()) return res.status(404).json({ error: 'off' });

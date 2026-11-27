@@ -4,6 +4,7 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import * as store from './gh-store.js';
 import { FIXED_RATINGS } from '../scripts/ratings-scale.mjs';
 
 const FILE = process.env.RANKINGS_FILE || path.join(process.env.DATA_DIR || os.tmpdir(), 'dugout-rankings.json');
@@ -75,7 +76,21 @@ export function parseRankings(text) {
 let base = new Map();   // id -> { rating, ratings }
 let state = { updatedAt: null, source: null, rankings: { batting: [], bowling: [], allrounder: [] }, last: { moved: [], matched: 0, unmatched: [] } };
 try { const s = JSON.parse(fs.readFileSync(FILE, 'utf8')); if (s && s.rankings) state = s; } catch {}
-const save = () => { try { fs.writeFileSync(FILE, JSON.stringify(state)); } catch {} };
+const save = () => {
+  try { fs.writeFileSync(FILE, JSON.stringify(state)); } catch {}
+  // also keep a copy on GitHub so it survives deploys (best-effort)
+  store.putJSON('rankings.json', state, 'Update ICC rankings snapshot').catch((e) => console.warn('rankings backup failed:', e.message));
+};
+
+// At startup, if the disk is empty (fresh deploy), pull the last snapshot back from GitHub
+export async function hydrate(players) {
+  if (state.updatedAt || !store.enabled()) return false;
+  try {
+    const s = await store.getJSON('rankings.json');
+    if (s && s.rankings && s.updatedAt) { state = s; applyRankings(players, state.rankings, false); return true; }
+  } catch (e) { console.warn('rankings restore failed:', e.message); }
+  return false;
+}
 
 export function initRatings(players) {
   base = new Map(players.map((p) => [p.id, { rating: p.rating, ratings: { ...p.ratings } }]));
