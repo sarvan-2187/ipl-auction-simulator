@@ -256,10 +256,33 @@ function findFeeds(html, base) {
 async function fetchText(url) {
   const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 20000);
   try {
-    const r = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; DugoutRatings/1.0)', accept: 'application/json,text/html' }, signal: ctl.signal });
+    const r = await fetch(url, { headers: { 'user-agent': 'TheDugout/1.0 (IPL auction fan game; https://ipl.sarvankumar.in)', accept: 'application/json,text/html' }, signal: ctl.signal });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     return await r.text();
   } finally { clearTimeout(to); }
+}
+
+// Wikipedia keeps the ICC men's top 10 per format as plain tables, and it does not block servers.
+const WIKI = 'https://en.wikipedia.org/w/api.php?action=parse&page=ICC_Men%27s_Player_Rankings&prop=text&format=json&formatversion=2';
+export function parseWikipedia(html) {
+  const out = { batting: [], bowling: [], allrounder: [] };
+  const want = { batting: /T20I\s+Bats(?:men|ters)/i, bowling: /T20I\s+Bowlers/i, allrounder: /T20I\s+All[- ]?rounders/i };
+  for (const t of html.matchAll(/<table[\s\S]*?<\/table>/g)) {
+    const head = t[0].slice(0, 600).replace(/<[^>]+>/g, ' ');
+    const cat = Object.keys(want).find((c) => want[c].test(head));
+    if (!cat || out[cat].length) continue;
+    for (const tr of t[0].matchAll(/<tr[\s\S]*?<\/tr>/g)) {
+      const row = tr[0].replace(/<sup[\s\S]*?<\/sup>/g, '');
+      const rank = +((row.match(/<t[hd][^>]*>\s*(\d{1,3})\s*</) || [])[1]);
+      const cell = (row.match(/<td[^>]*>([\s\S]*?)<\/td>/) || [])[1];
+      if (!rank || !cell) continue;
+      const links = [...cell.matchAll(/<a [^>]*>([^<]+)<\/a>/g)].map((m) => decode(m[1]).trim()).filter(Boolean);
+      const name = links[links.length - 1] || decode(cell.replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+      const rating = +((row.match(/<td[^>]*>\s*(\d{3,4})\s*<\/td>/) || [])[1]) || undefined;
+      if (name) out[cat].push({ name, rank, rating });
+    }
+  }
+  return out;
 }
 
 // source: 'icc' fetches the live pages; 'manual' takes {batting, bowling, allrounder} pasted text
@@ -271,7 +294,14 @@ export async function refresh(players, { manual } = {}) {
   } else {
     const u = urls();
     probe = [];
+    try {
+      const j = JSON.parse(await fetchText(WIKI));
+      const w = parseWikipedia(j?.parse?.text || '');
+      for (const c of CATS) if (w[c].length >= 5) rankings[c] = w[c];
+      if (CATS.some((c) => rankings[c].length)) lastHost = 'wikipedia.org';
+    } catch (e) { errors.push(`wikipedia: ${e.message}`); }
     for (const c of CATS) {
+      if (rankings[c].length) continue;
       const tried = [];
       for (const url of u[c]) {
         try {
