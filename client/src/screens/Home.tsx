@@ -101,6 +101,12 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
         </div>
       </section>
 
+      {/* ---------- live rating trends ---------- */}
+      <section className="lp-sec" aria-label="Ratings">
+        <SectionHead eyebrow="Ratings that follow form" title="Ratings move with the game, not just the history" />
+        <RatingTrends players={players} />
+      </section>
+
       {/* ---------- faces ---------- */}
       <section className="lp-sec lp-faces-sec" aria-label="Some of the players">
         <SectionHead eyebrow={`${players.length} players`} title="Your squad is waiting" />
@@ -342,6 +348,41 @@ function Stat({ n, label, suffix = '' }: { n: number; label: string; suffix?: st
     <div ref={ref} className="lp-stat">
       <b className="display">{v}{suffix}</b>
       <span>{label}</span>
+    </div>
+  );
+}
+
+function RatingTrends({ players }: { players: Player[] }) {
+  const tiers = useMemo(() => {
+    const top = (lo: number, hi: number, n: number) => players.filter((p) => p.rating >= lo && p.rating <= hi).sort((a, b) => b.rating - a.rating || a.name.localeCompare(b.name)).slice(0, n);
+    return [
+      { r: '100', t: 'Legends', d: 'Kept for the all-time greats.', ps: top(100, 100, 3) },
+      { r: '99', t: 'Superstars', d: 'The few who define a format.', ps: top(99, 99, 4) },
+      { r: '95+', t: 'Elite', d: 'Match-winners on any given night.', ps: top(95, 98, 4) },
+      { r: '65+', t: 'Everyone else', d: 'Every player in the pool starts at 65 or higher.', ps: [] as Player[] },
+    ];
+  }, [players]);
+  const bonus = [['#1', '+4'], ['Top 3', '+3'], ['Top 10', '+2'], ['Top 25', '+1']];
+  return (
+    <div className="lp-trends">
+      <InView className="lp-tiers panel">
+        {tiers.map((tier) => (
+          <div key={tier.r} className="lp-tier">
+            <b className="lp-tier-r">{tier.r}</b>
+            <div className="lp-tier-body">
+              <div className="lp-tier-t">{tier.t} <small>{tier.d}</small></div>
+              {tier.ps.length > 0 && <div className="lp-tier-ps">{tier.ps.map((p) => <span key={p.id} className="lp-pill">{p.name}</span>)}</div>}
+            </div>
+          </div>
+        ))}
+      </InView>
+      <InView className="lp-trend-card panel" delay={0.08}>
+        <div className="eyebrow gold">Updated from the ICC T20I rankings</div>
+        <p>Every rating starts from IPL stats. Players ranked in the ICC men's T20I batting, bowling or all-rounder lists get a bonus on top, and the ratings refresh as the rankings change.</p>
+        <div className="lp-bonus">
+          {bonus.map(([rk, b]) => <div key={rk}><span>{rk}</span><b>{b}</b></div>)}
+        </div>
+      </InView>
     </div>
   );
 }
