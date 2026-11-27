@@ -1,0 +1,63 @@
+<style>
+@font-face { font-family: 'Geist'; src: url('/fonts/Geist-Variable.woff2') format('woff2'); font-weight: 100 900; }
+@font-face { font-family: 'NType 82'; src: url('/fonts/NType82.woff2') format('woff2'); }
+* { margin: 0; box-sizing: border-box; }
+body { width: 1080px; height: 1350px; background: #051109; overflow: hidden; font-family: Geist; color: #f3e7c3; }
+.p { position: relative; width: 1080px; height: 1350px; overflow: hidden; padding: 84px 80px;
+  background: radial-gradient(760px 520px at 85% 100%, rgba(245,192,74,.22), transparent 70%), radial-gradient(700px 480px at 0% 0%, rgba(106,240,176,.10), transparent 70%),
+  repeating-linear-gradient(90deg, rgba(255,255,255,.028) 0 90px, transparent 90px 180px), linear-gradient(180deg, #08190f, #051109); }
+.eyebrow { display: flex; align-items: center; gap: 16px; font-size: 22px; font-weight: 600; letter-spacing: .26em; text-transform: uppercase; color: #a8b9a7; }
+.eyebrow i { width: 46px; height: 3px; background: #f5c04a; }
+h1 { margin-top: 26px; font-family: 'NType 82', Georgia, serif; font-weight: 400; font-size: 150px; line-height: .92; letter-spacing: -.02em; color: #f6efdc; }
+h1 span { display: block; background: linear-gradient(180deg, #ffdf8a, #f5c04a 55%, #b9851c); -webkit-background-clip: text; color: transparent; }
+.sub { margin-top: 24px; font-size: 34px; line-height: 1.35; color: #b9c7b6; max-width: 20em; }
+.ticket { position: absolute; left: 80px; right: 80px; top: 545px; height: 300px; display: grid; grid-template-columns: 1fr 250px; filter: drop-shadow(0 30px 40px rgba(0,0,0,.6)); rotate: -2.5deg; }
+.t-main { position: relative; padding: 28px 36px; border-radius: 26px 0 0 26px; background: linear-gradient(135deg, #0c4a9c, #07306b); overflow: hidden; }
+.t-main::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(135deg, rgba(255,255,255,.05) 0 3px, transparent 3px 14px); }
+.t-main > * { position: relative; z-index: 1; }
+.t-k { font-size: 20px; font-weight: 700; letter-spacing: .22em; color: #cfe0ff; text-transform: uppercase; display: flex; justify-content: space-between; }
+.t-n { margin-top: 16px; font-family: "NType 82", Georgia, serif; font-size: 66px; line-height: 1; color: #fff; }
+.t-r { margin-top: 10px; font-size: 22px; letter-spacing: .14em; color: #b8cdf2; font-weight: 600; text-transform: uppercase; }
+.t-p { margin-top: 18px; display: flex; gap: 40px; font-size: 20px; letter-spacing: .12em; text-transform: uppercase; color: #9cb7e6; font-weight: 600; }
+.t-p b { display: block; font-size: 44px; letter-spacing: 0; color: #fff; font-weight: 800; margin-top: 2px; }
+.t-stub { position: relative; border-radius: 0 26px 26px 0; background: #f3e7c3; color: #1a1200; display: grid; place-items: center; text-align: center; border-left: 4px dashed rgba(26,18,0,.35); }
+.t-stub::before, .t-stub::after { content: ''; position: absolute; left: -20px; width: 36px; height: 36px; border-radius: 50%; background: #051109; }
+.t-stub::before { top: -18px; } .t-stub::after { bottom: -18px; }
+.t-stub small { display: block; font-size: 17px; letter-spacing: .2em; font-weight: 700; text-transform: uppercase; }
+.t-stub b { display: block; font-family: 'NType 82', Georgia, serif; font-size: 60px; font-weight: 400; margin-top: 6px; }
+.stamp { position: absolute; right: 200px; top: 95px; rotate: -14deg; border: 6px solid #c8102e; color: #c8102e; font-size: 66px; font-weight: 900; letter-spacing: .1em; padding: 2px 22px; border-radius: 12px; background: rgba(246,239,220,.1); z-index: 2; }
+.feats { position: absolute; left: 80px; right: 80px; top: 905px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.f { padding: 16px 24px; border-radius: 999px; border: 1.5px solid rgba(243,231,195,.2); background: rgba(243,231,195,.05); font-size: 26px; font-weight: 600; display: flex; align-items: center; gap: 16px; }
+.f i { width: 14px; height: 14px; border-radius: 50%; background: #6af0b0; flex: none; box-shadow: 0 0 14px #6af0b0; }
+.cta { position: absolute; left: 80px; right: 80px; bottom: 168px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.cta b { flex: 1; text-align: center; padding: 22px 20px; border-radius: 999px; font-size: 40px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #1a1200; background: linear-gradient(180deg, #ffdf8a, #f5c04a 50%, #b9851c); box-shadow: 0 18px 50px -10px rgba(245,192,74,.5); }
+.url { position: absolute; left: 0; right: 0; bottom: 112px; text-align: center; font-size: 30px; font-weight: 600; letter-spacing: .04em; color: #f3e7c3; }
+.logos { position: absolute; left: 80px; right: 80px; bottom: 66px; display: flex; justify-content: center; gap: 18px; opacity: .85; }
+.logos img { width: 36px; height: 36px; object-fit: contain; }
+.fine { position: absolute; left: 0; right: 0; bottom: 28px; text-align: center; font-size: 17px; color: #7d907f; letter-spacing: .04em; }
+</style>
+<div class="p">
+  <div class="eyebrow"><i></i>Live IPL auctions with your friends</div>
+  <h1>The<span>Dugout</span></h1>
+  <div class="sub">Pick a franchise. Bring your friends. Fight over every star.</div>
+  <div class="ticket">
+    <div class="t-main">
+      <div class="t-k"><span>Official auction ticket</span><span>Lot 1</span></div>
+      <div class="t-n">Your dream buy</div>
+      <div class="t-r">Marquee · Rated 99</div>
+      <div class="t-p"><div>Hammer price<b>₹14.5 Cr</b></div><div>Bids<b>9</b></div></div>
+    </div>
+    <div class="t-stub"><div><small>Admit to</small><b>YOU</b></div></div>
+    <div class="stamp">SOLD</div>
+  </div>
+  <div class="feats">
+    <div class="f"><i></i>Real purses and rules</div>
+    <div class="f"><i></i>Computer rivals</div>
+    <div class="f"><i></i>Trade after the hammer</div>
+    <div class="f"><i></i>Free, no sign-up</div>
+  </div>
+  <div class="cta"><b>Start an auction</b></div>
+  <div class="url">ipl.sarvankumar.in</div>
+  <div class="logos"><img src="/teams/CSK.svg"><img src="/teams/MI.svg"><img src="/teams/RCB.svg"><img src="/teams/KKR.svg"><img src="/teams/DC.svg"><img src="/teams/PBKS.svg"><img src="/teams/RR.svg"><img src="/teams/SRH.svg"><img src="/teams/GT.svg"><img src="/teams/LSG.svg"></div>
+  <div class="fine">Fan-made. Not affiliated with the IPL, the BCCI or any franchise.</div>
+</div>
