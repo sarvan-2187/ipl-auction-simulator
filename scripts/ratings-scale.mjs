@@ -12,6 +12,8 @@ export const OVERRIDES = {
 };
 const FIXED = new Map(Object.entries(OVERRIDES).flatMap(([r, names]) => names.map((n) => [n.toLowerCase(), +r])));
 
+export { FIXED as FIXED_RATINGS };
+
 export const boost = (old) => Math.round(FLOOR + ((Math.max(35, Math.min(99, old)) - 35) * (CEIL - FLOOR)) / 64);
 
 // players: array with .rating and .ratings{BAT,BOWL,AR,WK}. Mutates and returns it.

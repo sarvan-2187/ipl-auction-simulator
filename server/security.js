@@ -115,7 +115,8 @@ export function httpLimiter() {
 export function requestGuard(req, res, next) {
   if (!['GET', 'HEAD', 'POST', 'OPTIONS'].includes(req.method)) return res.status(405).end();
   const len = Number(req.headers['content-length'] || 0);
-  if (len > LIMITS.maxPayloadBytes) return res.status(413).end();
+  const max = req.path.startsWith('/api/admin/') ? 64 * 1024 : LIMITS.maxPayloadBytes; // pasted rankings are bigger than game events
+  if (len > max) return res.status(413).end();
   if (req.originalUrl.length > 2048) return res.status(414).end();
   next();
 }

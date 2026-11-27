@@ -5,7 +5,8 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
-import { Room, makeCode, cleanName } from './game.js';
+import { Room, makeCode, cleanName, PLAYERS } from './game.js';
+import * as ratings from './ratings-live.js';
 import * as analytics from './analytics.js';
 import { securityHeaders, httpLimiter, requestGuard, hardenServer, originAllowed, socketGuard, LIMITS } from './security.js';
 
@@ -29,6 +30,9 @@ app.use((req, res, next) => {
   if (req.method !== 'GET' || req.path.startsWith('/api/') || req.path.startsWith('/socket.io') || req.path === '/healthz') return next();
   res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
 });
+// Live ratings file: must come before the static middleware so refreshed ratings are what clients get
+let playersJson = JSON.stringify(PLAYERS);
+app.get('/data/players.json', (_req, res) => { res.type('json').set('Cache-Control', 'public, max-age=300').send(playersJson); });
 // PWA: the service worker must never be cached by the browser, or updates take a day to reach people
 app.get('/sw.js', (_req, res) => {
   res.set({ 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Service-Worker-Allowed': '/' });
@@ -75,6 +79,28 @@ app.get('/api/stats', (req, res) => {
   if (!analytics.keyOk(req.get('x-stats-key'))) return res.status(401).json({ error: 'bad key' });
   res.json(analytics.snapshot(rooms));
 });
+// ---- live ratings: ICC T20I rankings feed a bonus on top of the stored base ratings ----
+ratings.initRatings(PLAYERS);
+const rebuild = () => { playersJson = JSON.stringify(PLAYERS); };
+const adminOnly = (req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  if (!analytics.statsEnabled()) return res.status(404).json({ error: 'off' });
+  if (!analytics.keyOk(req.get('x-stats-key'))) return res.status(401).json({ error: 'bad key' });
+  next();
+};
+app.get('/api/admin/ratings', adminOnly, (_req, res) => res.json(ratings.status()));
+app.post('/api/admin/ratings/refresh', adminOnly, express.json({ limit: '64kb' }), async (req, res) => {
+  const manual = req.body && req.body.manual && typeof req.body.manual === 'object' ? req.body.manual : undefined;
+  const r = await ratings.refresh(PLAYERS, { manual });
+  if (r.ok) rebuild();
+  res.status(r.ok ? 200 : 502).json({ ...r, status: ratings.status() });
+});
+// Daily refresh: if the last one is over a day old (or there is none), try the live source
+const dayOld = () => { const t = ratings.status().updatedAt; return !t || Date.now() - Date.parse(t) > 24 * 3600e3; };
+const autoRefresh = () => { if (dayOld()) ratings.refresh(PLAYERS).then((r) => { if (r.ok) rebuild(); console.log('ratings auto-refresh:', r.ok ? `${r.changed} changed` : r.error); }).catch(() => {}); };
+setTimeout(autoRefresh, 30_000).unref();
+setInterval(autoRefresh, 6 * 3600e3).unref();
+
 const ADMIN = path.join(__dirname, 'admin');
 app.get(['/admin/stats', '/admin/stats.js', '/admin/stats.css'], (req, res) => {
   res.set('Cache-Control', 'no-store');

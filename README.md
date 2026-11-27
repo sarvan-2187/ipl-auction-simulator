@@ -235,3 +235,9 @@ docs/images/          README banner and screenshots
 Built-in, cookie-free counters (visits, create/join/install clicks, rooms created, auctions started and finished) plus a live view of open rooms and players online. No personal data is stored.
 
 Set `ANALYTICS_KEY` on the server to a long random string, then open `/admin/stats` and enter the key. Without the variable the dashboard stays off. History is written to a JSON file in the temp folder; set `DATA_DIR` to a persistent disk to keep it across restarts and deploys.
+
+## Live rating trends
+
+Player ratings are a stored base plus a bonus for current ICC men's T20I rankings (rank 1: +4, top 3: +3, top 10: +2, top 25: +1; capped at 98, with 99 and 100 reserved for hand-picked names in `scripts/ratings-scale.mjs`). Each refresh recomputes from the base, so it never compounds.
+
+Open `/admin/stats` (same `ANALYTICS_KEY`) and press **Refresh from ICC now**. The server also tries once a day. If the ICC page can't be read, paste the three rankings into the box on the same page. Override the sources with `RANKINGS_URLS` (JSON with `batting`, `bowling`, `allrounder`). Set `DATA_DIR` to a persistent disk to keep the last rankings across deploys.
