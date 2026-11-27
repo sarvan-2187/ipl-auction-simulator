@@ -16,9 +16,9 @@ const TOP_N = 50;
 // ICC pages per category, tried in order (the site has moved its URLs before).
 // Override with RANKINGS_URLS='{"batting":"...","bowling":"...","allrounder":"..."}' (a string or a list).
 const DEFAULT_URLS = {
-  batting: ['https://www.icc-cricket.com/rankings/batting/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/batting', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/batting'],
-  bowling: ['https://www.icc-cricket.com/rankings/bowling/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/bowling', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/bowling'],
-  allrounder: ['https://www.icc-cricket.com/rankings/allrounder/mens/t20i', 'https://www.icc-cricket.com/rankings/all-rounder/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/all-rounder', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/all-rounder'],
+  batting: ['https://www.cricbuzz.com/cricket-stats/icc-rankings/men/batting', 'https://www.icc-cricket.com/rankings/batting/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/batting', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/batting'],
+  bowling: ['https://www.cricbuzz.com/cricket-stats/icc-rankings/men/bowling', 'https://www.icc-cricket.com/rankings/bowling/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/bowling', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/bowling'],
+  allrounder: ['https://www.cricbuzz.com/cricket-stats/icc-rankings/men/all-rounder', 'https://www.icc-cricket.com/rankings/allrounder/mens/t20i', 'https://www.icc-cricket.com/rankings/all-rounder/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/all-rounder', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/all-rounder'],
 };
 const urls = () => {
   let o = {}; try { o = JSON.parse(process.env.RANKINGS_URLS || '{}'); } catch {}
@@ -106,6 +106,36 @@ export function sampleData(html) {
   const re = /"(?:rank|Rank|position|rating|points)"\s*:/g; let m, k = 0;
   while ((m = re.exec(src)) && k++ < 3) out.push(src.slice(Math.max(0, m.index - 220), m.index + 220));
   return out;
+}
+
+// Cricbuzz: one page holds Test, ODI and T20 tables; players link to /profiles/<id>/<slug>.
+// Take the T20 block and read the player links in order.
+export function parseCricbuzz(html) {
+  const lower = html.toLowerCase();
+  const marks = [];
+  for (const re of [/t20s?['"\-_ ]|t20i/g]) { let m; while ((m = re.exec(lower))) marks.push(m.index); }
+  const tryBlock = (from, to) => {
+    const rows = []; const seen = new Set();
+    const block = html.slice(from, to);
+    for (const m of block.matchAll(/<a[^>]+href="\/profiles\/(\d+)\/[^"]*"[^>]*>([\s\S]*?)<\/a>/gi)) {
+      const title = (m[0].match(/title="([^"]+)"/) || [])[1];
+      const name = decode((title || m[2].replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim());
+      if (!name || seen.has(m[1]) || !/^[A-Za-z][A-Za-z .'’-]{2,40}$/.test(name)) continue;
+      seen.add(m[1]); rows.push({ name, rank: rows.length + 1 });
+    }
+    return rows;
+  };
+  // Prefer the block that starts at a T20 marker and runs to the next format marker
+  const fmt = /test|odi|t20/g; const starts = []; let m;
+  const tabs = /(?:id|ng-show|data-[a-z-]+|class)="[^"]*(test|odi|t20)[^"]*"/gi;
+  while ((m = tabs.exec(html))) starts.push({ at: m.index, f: m[1].toLowerCase() });
+  for (let i = 0; i < starts.length; i++) {
+    if (starts[i].f !== 't20') continue;
+    const next = starts.slice(i + 1).find((x) => x.f !== 't20');
+    const rows = tryBlock(starts[i].at, next ? next.at : html.length);
+    if (rows.length >= 10) return rows;
+  }
+  return [];
 }
 
 export function parseRankings(text, { pasted = false } = {}) {
@@ -202,6 +232,7 @@ export function applyRankings(players, rankings, record = true) {
 }
 
 let probe = [];
+let lastHost = '';
 function findFeeds(html, base) {
   const out = new Set();
   for (const m of String(html).matchAll(/(?:https?:)?\/\/[^"'\s<>()]+|\/[A-Za-z0-9_\-\/.]*rank[^"'\s<>()]*/gi)) {
@@ -227,15 +258,16 @@ export async function refresh(players, { manual } = {}) {
     for (const c of CATS) rankings[c] = parseRankings(manual[c], { pasted: true });
   } else {
     const u = urls();
+    probe = [];
     for (const c of CATS) {
       const tried = [];
       for (const url of u[c]) {
         try {
           const html = await fetchText(url);
-          const rows = parseRankings(html);
-          if (rows.length >= 5) { rankings[c] = rows; break; }
+          const rows = /cricbuzz\.com/.test(url) ? parseCricbuzz(html) : parseRankings(html);
+          if (rows.length >= 5) { rankings[c] = rows; lastHost = new URL(url).hostname.replace(/^www\./, ''); break; }
           tried.push('page loaded but no ranking data in it');
-          if (c === 'batting') probe = [...sampleData(html), ...findFeeds(html, url).filter((u) => !/icc-cricket\.com\/rankings/.test(u))];
+          if (c === 'batting' && !probe.length) probe = [`${url}: ${html.length} chars, profile links: ${(html.match(/\/profiles\/\d+/g) || []).length}`, ...sampleData(html), ...findFeeds(html, url).filter((u) => !/icc-cricket\.com\/rankings/.test(u))];
         } catch (e) { tried.push(e.message); }
       }
       if (!rankings[c].length) errors.push(`${c}: ${[...new Set(tried)].join(', ')}`);
@@ -246,7 +278,7 @@ export async function refresh(players, { manual } = {}) {
   // categories that came back empty keep their previous ranking
   for (const c of CATS) if (!rankings[c].length && state.rankings[c]?.length) rankings[c] = state.rankings[c];
   const res = applyRankings(players, rankings);
-  state.rankings = rankings; state.updatedAt = new Date().toISOString(); state.source = manual ? 'manual paste' : 'ICC T20I rankings';
+  state.rankings = rankings; state.updatedAt = new Date().toISOString(); state.source = manual ? 'manual paste' : 'ICC T20I rankings (via ' + (lastHost || 'web') + ')';
   save();
   return { ok: true, ...res, errors };
 }
