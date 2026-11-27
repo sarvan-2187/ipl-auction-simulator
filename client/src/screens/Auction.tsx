@@ -390,7 +390,7 @@ function ceremonyTags(room: RoomState, lot: Lot, p: Player): CeremonyTags {
   const before = room.log.filter((l) => l.kind === 'sold' && l.id !== lot.id).map((l) => l.amount || 0);
   return {
     record: before.length >= 2 && lot.bid > Math.max(...before),
-    steal: p.rating >= 80 && lot.bid <= lot.base * 1.5,
+    steal: p.rating >= 88 && lot.bid <= lot.base * 1.5,
     war: (lot.bidCount ?? lot.history.length) >= 14,
   };
 }

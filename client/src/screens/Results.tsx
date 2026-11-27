@@ -16,6 +16,9 @@ import TradeCenter, { TradeButton, useTradeAlerts } from '../components/TradeCen
 import { autoXI, roleIn, xiInfo } from '../lib/xi';
 import { ratingAs } from '../lib/data';
 
+// Final score = Playing XI rating + up to this many points for purse left
+const PURSE_BONUS = 6;
+
 export default function Results({ room }: { room: RoomState }) {
   const toast = useToast();
   const [drawer, setDrawer] = useState<string | null>(null);
@@ -40,14 +43,16 @@ export default function Results({ room }: { room: RoomState }) {
       const ids = t.xi && t.xi.length ? t.xi : autoXI(t.squad);
       const info = xiInfo(ids, t.squad);
       const xi = ids.map((id) => { const p = getPlayer(id); const role = roleIn(t.squad, id); return { p, role, r: ratingAs(p, role) }; });
-      return { t, xi, score: info.rating, locked: !!t.xiLocked, picked: !!(t.xi && t.xi.length), spent: room.settings.purse - t.purse, strength: teamStrength(t.squad).score };
+      // unspent purse counts: keeping all of it is worth PURSE_BONUS points
+      const bonus = Math.round(Math.max(0, Math.min(1, t.purse / room.settings.purse)) * PURSE_BONUS * 10) / 10;
+      return { t, xi, xiRating: info.rating, bonus, score: Math.round((info.rating + bonus) * 10) / 10, locked: !!t.xiLocked, picked: !!(t.xi && t.xi.length), spent: room.settings.purse - t.purse, strength: teamStrength(t.squad).score };
     })
     .sort((a, b) => b.score - a.score || a.spent - b.spent), [room]);
   const allLocked = ranked.every((r) => r.locked);
 
   const allBuys = Object.values(room.teams).flatMap((t) => t.squad.map((s) => ({ ...s, team: t.code, p: getPlayer(s.id) })));
   const priciest = allBuys.slice().sort((a, b) => b.price - a.price)[0];
-  const steal = allBuys.filter((b) => b.p.rating >= 70).sort((a, b) => a.price / a.p.rating - b.price / b.p.rating)[0];
+  const steal = allBuys.filter((b) => b.p.rating >= 83).sort((a, b) => a.price / a.p.rating - b.price / b.p.rating)[0];
   const overpay = allBuys.slice().sort((a, b) => b.price / b.p.base - a.price / a.p.base)[0];
   const winner = ranked[0];
 
@@ -61,7 +66,7 @@ export default function Results({ room }: { room: RoomState }) {
     const lines = [`The Dugout · Room ${room.code} · Final squads`, ''];
     ranked.forEach((r, i) => {
       const owner = room.members.find((m) => m.team === r.t.code)?.name;
-      lines.push(`${i + 1}. ${r.t.code} (${owner}) · strength ${r.score} · spent ${money(r.spent)}`);
+      lines.push(`${i + 1}. ${r.t.code} (${owner}) · score ${r.score.toFixed(1)} (XI ${r.xiRating.toFixed(1)} + purse ${r.bonus.toFixed(1)}) · spent ${money(r.spent)}`);
       lines.push('   ' + r.t.squad.slice().sort((a, b) => b.price - a.price).map((s) => `${getPlayer(s.id).name} ${money(s.price, { short: true })}`).join(', '));
     });
     return lines.join('\n');
@@ -119,7 +124,7 @@ export default function Results({ room }: { room: RoomState }) {
             <div className="eyebrow">Room {room.code} · {allLocked ? 'Champions' : 'Leading'}</div>
             <div className="display ellipsis" style={{ fontSize: 22 }}>{winner ? getTeam(winner.t.code)?.name : 'Auction complete'}</div>
           </div>
-          {winner && <div className="rp-score"><b>{winner.score.toFixed(1)}</b><span>XI</span></div>}
+          {winner && <div className="rp-score"><b>{winner.score.toFixed(1)}</b><span>pts</span></div>}
         </div>
         <PageTabs id="results" page={page} setPage={setPage} tabs={[
           { key: 'table', label: 'Table' },
@@ -169,7 +174,7 @@ export default function Results({ room }: { room: RoomState }) {
                       <div className="display" style={{ fontSize: 24 }}>#{ranked.indexOf(r) + 1} {r.t.code}</div>
                       <div className="muted ellipsis" style={{ fontWeight: 700, fontSize: 13 }}>{owner?.name}{owner?.bot ? ' · computer' : ''} · spent {money(r.spent)}</div>
                     </div>
-                    <div className="rp-score"><b>{r.score.toFixed(1)}</b><span>XI</span></div>
+                    <div className="rp-score"><b>{r.score.toFixed(1)}</b><span>pts</span></div>
                   </div>
                   <div className="rp-xi-list">
                     {r.xi.map((x) => (
@@ -230,7 +235,7 @@ export default function Results({ room }: { room: RoomState }) {
             <TeamLogo code={winner.t.code} size={110} />
             <div className="display" style={{ fontSize: 'clamp(44px, 7vw, 80px)' }}>{getTeam(winner.t.code)?.name}</div>
             <div className="muted" style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 18 }}>
-              {allLocked ? 'Champions' : 'Leading'} · Playing XI rating <span className="gold">{winner.score.toFixed(1)}</span>
+              {allLocked ? 'Champions' : 'Leading'} · Final score <span className="gold">{winner.score.toFixed(1)}</span>
               {!allLocked && <div className="dim" style={{ fontSize: 13, fontWeight: 500, marginTop: 4 }}>Provisional: not every team has locked its XI yet</div>}
             </div>
           </motion.div>
@@ -273,9 +278,9 @@ export default function Results({ room }: { room: RoomState }) {
                 {!rulesMet(room, r.t) && <div className="dim" style={{ fontSize: 12, marginTop: 6 }}>Squad rules not met</div>}
               </div>
               <div className="kpis" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                <div className="fact"><span>XI rating</span><b className="gold">{r.score.toFixed(1)}</b></div>
-                <div className="fact"><span>Spent</span><b>{money(r.spent)}</b></div>
-                <div className="fact"><span>Squad</span><b>{r.t.squad.length}</b></div>
+                <div className="fact"><span>Final score</span><b className="gold">{r.score.toFixed(1)}</b></div>
+                <div className="fact"><span>XI rating</span><b>{r.xiRating.toFixed(1)}</b></div>
+                <div className="fact"><span>Purse left</span><b>{money(r.t.purse)} <small className="dim">+{r.bonus.toFixed(1)}</small></b></div>
               </div>
               <div style={{ padding: '8px 16px 16px' }}>
                 <div className="row" style={{ justifyContent: 'space-between', margin: '6px 0' }}>

@@ -141,9 +141,12 @@ export function buildQueue(settings, numTeams, seed) {
   return queue;
 }
 
-// Fair value used by bots (lakhs). rating 60 ≈ 1.3 Cr, 75 ≈ 3.8 Cr, 90 ≈ 11 Cr.
+// Ratings run 65-100 now; the price curves below were tuned on the older 35-99 scale, so convert first.
+const legacyRating = (r) => Math.min(102, 35 + ((r - 65) * 64) / 33);
+
+// Fair value used by bots (lakhs). 78 ≈ 1.3 Cr, 87 ≈ 3.8 Cr, 94 ≈ 11 Cr.
 function fairValue(p) {
-  return Math.max(p.base, Math.round(30 * Math.pow(1.075, p.rating - 40)));
+  return Math.max(p.base, Math.round(30 * Math.pow(1.075, legacyRating(p.rating) - 40)));
 }
 
 export class Room {
@@ -865,8 +868,8 @@ export class Room {
   }
 }
 
-// Rough auction value from rating: 99 ≈ ₹20 Cr, 90 ≈ ₹9 Cr, 80 ≈ ₹1.5 Cr, below 70 nothing extra
-export const marketValue = (p) => (p.rating <= 70 ? 0 : Math.round(Math.pow((p.rating - 70) / 29, 2.2) * 2000 / 5) * 5);
+// Rough auction value from rating: 99 ≈ ₹20 Cr, 94 ≈ ₹9 Cr, 88 ≈ ₹1.5 Cr, below 83 nothing extra
+export const marketValue = (p) => { const r = legacyRating(p.rating); return r <= 70 ? 0 : Math.round(Math.pow((r - 70) / 29, 2.2) * 2000 / 5) * 5; };
 
 // Display names: printable characters only, collapsed spaces, 18 max
 export const cleanName = (n) => String(n ?? '').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, '').replace(/\s+/g, ' ').trim().slice(0, 18);

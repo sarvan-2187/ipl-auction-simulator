@@ -1,3 +1,4 @@
+import { rescale } from './ratings-scale.mjs';
 // Rating engine shared by fetch-data.mjs (online refresh) and rerate.mjs (offline, cached data only).
 // Input: players [{ id, gid, name, role, country, cc, overseas, seasons: ['2026', ...], imgs }],
 //        statsOf Map(id -> iplt20 stats JSON), retained Map(norm(name) -> retention record).
@@ -175,5 +176,5 @@ export function rateAll(players, statsOf, retained, log = console.log) {
     p.marquee = i < 30 && p.capped;
   });
 
-  return out;
+  return rescale(out);
 }

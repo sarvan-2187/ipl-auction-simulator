@@ -11,7 +11,7 @@ import { track } from '../lib/analytics';
 
 export default function Home({ initialCode }: { initialCode: string | null }) {
   const players = allPlayers();
-  const elite = useMemo(() => players.filter((p) => p.rating >= 90).length, [players]);
+  const elite = useMemo(() => players.filter((p) => p.rating >= 95).length, [players]);
   const formRef = useRef<HTMLFormElement>(null);
   const toTop = () => { formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); formRef.current?.querySelector('input')?.focus({ preventScroll: true }); };
 
@@ -81,7 +81,7 @@ export default function Home({ initialCode }: { initialCode: string | null }) {
       <section className="lp-sec">
         <div className="lp-stats">
           <Stat n={players.length} label="Players in the pool" />
-          <Stat n={elite} label="Rated 90 and above" />
+          <Stat n={elite} label="Rated 95 and above" />
           <Stat n={10} label="Franchises" />
           <Stat n={7} label="Seconds on the bid clock" suffix="s" />
         </div>
@@ -192,7 +192,7 @@ function EntryForm({ initialCode, formRef }: { initialCode: string | null; formR
 // ---------- looping mini auction ----------
 type DemoBid = { team: string; amount: number };
 function AuctionDemo() {
-  const stars = useMemo(() => allPlayers().filter((p) => p.photo === 'cut' && p.rating >= 92).sort((a, b) => b.rating - a.rating).slice(0, 12), []);
+  const stars = useMemo(() => allPlayers().filter((p) => p.photo === 'cut' && p.rating >= 95).sort((a, b) => b.rating - a.rating).slice(0, 12), []);
   const teams = useMemo(() => allTeams(), []);
   const [i, setI] = useState(0);
   const [bids, setBids] = useState<DemoBid[]>([]);
