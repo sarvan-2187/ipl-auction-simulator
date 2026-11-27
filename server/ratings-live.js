@@ -18,7 +18,7 @@ const TOP_N = 50;
 const DEFAULT_URLS = {
   batting: ['https://www.icc-cricket.com/rankings/batting/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/batting', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/batting'],
   bowling: ['https://www.icc-cricket.com/rankings/bowling/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/bowling', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/bowling'],
-  allrounder: ['https://www.icc-cricket.com/rankings/all-rounder/mens/t20i', 'https://www.icc-cricket.com/rankings/allrounder/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/all-rounder', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/all-rounder'],
+  allrounder: ['https://www.icc-cricket.com/rankings/allrounder/mens/t20i', 'https://www.icc-cricket.com/rankings/all-rounder/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/all-rounder', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/all-rounder'],
 };
 const urls = () => {
   let o = {}; try { o = JSON.parse(process.env.RANKINGS_URLS || '{}'); } catch {}
@@ -67,10 +67,52 @@ function fromJSON(j) {
     .sort((a, b) => a.rank - b.rank);
 }
 
+// Next.js App Router pages ship their data as escaped JS strings: self.__next_f.push([1,"..."]).
+// Unescape those, then try every JSON array of objects in them and keep the best ranking-shaped one.
+function flightText(html) {
+  const parts = [];
+  for (const m of html.matchAll(/self\.__next_f\.push\(\[\d+,\s*("(?:[^"\\]|\\.)*")\]\)/g)) { try { parts.push(JSON.parse(m[1])); } catch {} }
+  return parts.join('');
+}
+function arraysIn(text, limit = 4000) {
+  const out = [];
+  let i = 0, n = 0;
+  while ((i = text.indexOf('[{', i)) !== -1 && n++ < limit) {
+    let depth = 0, inStr = false, j = i;
+    for (; j < text.length; j++) {
+      const ch = text[j];
+      if (inStr) { if (ch === '\\') j++; else if (ch === '"') inStr = false; continue; }
+      if (ch === '"') inStr = true; else if (ch === '[' || ch === '{') depth++; else if (ch === ']' || ch === '}') { depth--; if (!depth) break; }
+    }
+    if (!depth) { try { out.push(JSON.parse(text.slice(i, j + 1))); } catch {} }
+    i += 2;
+  }
+  return out;
+}
+export function fromEmbedded(html) {
+  let best = [];
+  for (const src of [flightText(html), html]) {
+    if (!src) continue;
+    for (const arr of arraysIn(src)) { const rows = fromJSON(arr); if (rows.length > best.length) best = rows; }
+    if (best.length >= 5) break;
+  }
+  return best;
+}
+// For diagnosis: what the page's embedded data looks like around ranking-ish keys
+export function sampleData(html) {
+  const f = flightText(html);
+  const src = f || html;
+  const out = [`next data blobs: ${f ? f.length + ' chars' : 'none'}`];
+  const re = /"(?:rank|Rank|position|rating|points)"\s*:/g; let m, k = 0;
+  while ((m = re.exec(src)) && k++ < 3) out.push(src.slice(Math.max(0, m.index - 220), m.index + 220));
+  return out;
+}
+
 export function parseRankings(text, { pasted = false } = {}) {
   const t = String(text || '').trim(); if (!t) return [];
   // JSON embedded in an HTML page (Next.js and similar)
   if (t[0] === '<') {
+    const deep = fromEmbedded(t); if (deep.length >= 5) return deep;
     for (const m of t.matchAll(/<script[^>]*type="application\/(?:ld\+)?json"[^>]*>([\s\S]*?)<\/script>/gi)) {
       try { const rows = fromJSON(JSON.parse(m[1])); if (rows.length >= 5) return rows; } catch {}
     }
@@ -193,7 +235,7 @@ export async function refresh(players, { manual } = {}) {
           const rows = parseRankings(html);
           if (rows.length >= 5) { rankings[c] = rows; break; }
           tried.push('page loaded but no ranking data in it');
-          if (c === 'batting') probe = findFeeds(html, url);
+          if (c === 'batting') probe = [...sampleData(html), ...findFeeds(html, url).filter((u) => !/icc-cricket\.com\/rankings/.test(u))];
         } catch (e) { tried.push(e.message); }
       }
       if (!rankings[c].length) errors.push(`${c}: ${[...new Set(tried)].join(', ')}`);
