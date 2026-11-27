@@ -8,6 +8,7 @@ export const CEIL = 98;
 export const OVERRIDES = {
   100: ['Virat Kohli', 'Rohit Sharma', 'Mahendra Singh Dhoni'],
   99: ['Jasprit Bumrah', 'Kane Williamson', 'Vaibhav Sooryavanshi'],
+  98: ['Hardik Pandya'],
 };
 const FIXED = new Map(Object.entries(OVERRIDES).flatMap(([r, names]) => names.map((n) => [n.toLowerCase(), +r])));
 
