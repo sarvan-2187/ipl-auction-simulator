@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { track } from './analytics';
 
 type PromptEvent = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> };
 
@@ -17,7 +18,7 @@ export const isIOS = () =>
 // The browser can fire this before React renders, so catch it at module load.
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e as PromptEvent; ping(); });
-  window.addEventListener('appinstalled', () => { deferred = null; ping(); });
+  window.addEventListener('appinstalled', () => { deferred = null; track('installed'); ping(); });
   if ('serviceWorker' in navigator && (import.meta as any).env?.PROD) {
     window.addEventListener('load', () => { navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => {}); });
   }

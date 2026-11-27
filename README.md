@@ -229,3 +229,9 @@ docs/images/          README banner and screenshots
 - **No real money.** All purses, bids and prices are virtual. The game involves no betting, payments or prizes of any kind.
 - **Fonts.** NType 82 is a proprietary typeface by Nothing and is used only in this private, non-commercial project.
 - **Takedown.** If you own any of the material used here and would like it removed, please open an issue and it will be taken down.
+
+## Analytics
+
+Built-in, cookie-free counters (visits, create/join/install clicks, rooms created, auctions started and finished) plus a live view of open rooms and players online. No personal data is stored.
+
+Set `ANALYTICS_KEY` on the server to a long random string, then open `/admin/stats` and enter the key. Without the variable the dashboard stays off. History is written to a JSON file in the temp folder; set `DATA_DIR` to a persistent disk to keep it across restarts and deploys.

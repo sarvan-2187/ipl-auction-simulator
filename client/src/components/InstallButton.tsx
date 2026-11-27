@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { usePwa } from '../lib/pwa';
+import { track } from '../lib/analytics';
 
 const Share = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" /></svg>
@@ -13,7 +14,7 @@ export default function InstallButton({ className = '', iconOnly = false }: { cl
   const pwa = usePwa();
   const [help, setHelp] = useState(false);
   if (!pwa.available) return null;
-  const go = async () => { if ((await pwa.install()) === 'ios') setHelp(true); };
+  const go = async () => { track('clickInstall'); if ((await pwa.install()) === 'ios') setHelp(true); };
   return (
     <>
       <button type="button" className={`install-pill ${iconOnly ? 'icon' : ''} ${className}`} onClick={go} aria-label="Install app" title="Install app">

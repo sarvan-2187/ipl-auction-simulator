@@ -7,6 +7,7 @@ import { sfx } from '../lib/sound';
 import type { Lot, Player } from '../lib/types';
 import SoldCeremony from '../components/SoldCeremony';
 import InstallButton from '../components/InstallButton';
+import { track } from '../lib/analytics';
 
 export default function Home({ initialCode }: { initialCode: string | null }) {
   const players = allPlayers();
@@ -150,6 +151,7 @@ function EntryForm({ initialCode, formRef }: { initialCode: string | null; formR
     if (!n) return toast('Enter your name first', true);
     if (tab === 'join' && code.trim().length < 5) return toast('Enter the 5-letter room code', true);
     setName(n);
+    track(tab === 'create' ? 'clickCreate' : 'clickJoin');
     setBusy(true);
     const r = tab === 'create' ? await createRoom(n) : await joinRoom(code.trim(), n);
     setBusy(false);

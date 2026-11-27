@@ -6,6 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Server } from 'socket.io';
 import { Room, makeCode, cleanName } from './game.js';
+import * as analytics from './analytics.js';
 import { securityHeaders, httpLimiter, requestGuard, hardenServer, originAllowed, socketGuard, LIMITS } from './security.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -62,6 +63,24 @@ function health(_req, res) {
     time: new Date().toISOString(),
   });
 }
+// ---- analytics: client events in, private dashboard out ----
+app.post('/api/track', express.json({ limit: '512b' }), (req, res) => {
+  const e = req.body && req.body.e;
+  if (typeof e === 'string' && analytics.CLIENT_EVENTS.has(e)) analytics.count(e);
+  res.status(204).end();
+});
+app.get('/api/stats', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (!analytics.statsEnabled()) return res.status(404).json({ error: 'off' });
+  if (!analytics.keyOk(req.get('x-stats-key'))) return res.status(401).json({ error: 'bad key' });
+  res.json(analytics.snapshot(rooms));
+});
+const ADMIN = path.join(__dirname, 'admin');
+app.get(['/admin/stats', '/admin/stats.js', '/admin/stats.css'], (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.set('X-Robots-Tag', 'noindex, nofollow');
+  res.sendFile(path.join(ADMIN, req.path === '/admin/stats' ? 'stats.html' : path.basename(req.path)));
+});
 app.get('/api/health', health);
 app.get('/healthz', health);
 // Test-only shortcut (DEV_TOOLS=1): fill every squad and jump to the Playing XI screen
@@ -167,6 +186,7 @@ io.on('connection', (socket) => {
       const code = makeCode(rooms);
       const r = new Room(code, id);
       rooms.set(code, r);
+      analytics.count('roomsCreated');
       r.join(id, name);
       attach(r, id);
       broadcast(r);
@@ -180,6 +200,7 @@ io.on('connection', (socket) => {
       if (!r) throw new Error('Room not found. Check the code.');
       if (!validId(id)) throw new Error('Missing player id');
       r.join(id, name);
+      analytics.count('joins');
       attach(r, id);
       r.touch();
       broadcast(r);
@@ -203,7 +224,7 @@ io.on('connection', (socket) => {
   act('addBot', ({ team }) => room.addBot(memberId, team));
   act('removeMember', ({ id }) => room.removeMember(memberId, id));
   act('settings', (patch) => room.updateSettings(memberId, patch));
-  act('start', () => room.start(memberId));
+  act('start', () => { const o = room.start(memberId); analytics.count('auctionsStarted'); return o; });
   act('bid', ({ amount, seen }) => room.placeBid(memberId, Number(amount), Date.now(), seen === undefined ? undefined : seen));
   act('pass', () => room.pass(memberId));
   act('doneBuying', () => room.doneBuying(memberId));
@@ -265,7 +286,11 @@ io.on('connection', (socket) => {
 // Game clock
 setInterval(() => {
   const now = Date.now();
-  for (const r of rooms.values()) if (r.tick(now)) broadcast(r);
+  for (const r of rooms.values()) {
+    if (r.tick(now)) broadcast(r);
+    if (r.phase === 'results' && !r._counted) { r._counted = true; analytics.count('auctionsFinished'); }
+    else if (r.phase !== 'results') r._counted = false;
+  }
 }, 200);
 
 // Housekeeping: drop rooms idle for 6h, or empty lobbies after 30 min
