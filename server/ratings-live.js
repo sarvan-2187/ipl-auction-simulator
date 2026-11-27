@@ -13,13 +13,17 @@ const SKILL = { batting: 'BAT', bowling: 'BOWL', allrounder: 'AR' };
 const SOFT_CAP = 98; // rankings can lift a player to 98; 99 and 100 stay hand-picked
 const TOP_N = 50;
 
-// ICC page per category; override with RANKINGS_URLS='{"batting":"...","bowling":"...","allrounder":"..."}'
+// ICC pages per category, tried in order (the site has moved its URLs before).
+// Override with RANKINGS_URLS='{"batting":"...","bowling":"...","allrounder":"..."}' (a string or a list).
 const DEFAULT_URLS = {
-  batting: 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/batting',
-  bowling: 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/bowling',
-  allrounder: 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/all-rounder',
+  batting: ['https://www.icc-cricket.com/rankings/batting/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/batting', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/batting'],
+  bowling: ['https://www.icc-cricket.com/rankings/bowling/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/bowling', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/bowling'],
+  allrounder: ['https://www.icc-cricket.com/rankings/all-rounder/mens/t20i', 'https://www.icc-cricket.com/rankings/allrounder/mens/t20i', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20i/all-rounder', 'https://www.icc-cricket.com/rankings/mens/player-rankings/t20/all-rounder'],
 };
-const urls = () => { try { return { ...DEFAULT_URLS, ...JSON.parse(process.env.RANKINGS_URLS || '{}') }; } catch { return DEFAULT_URLS; } };
+const urls = () => {
+  let o = {}; try { o = JSON.parse(process.env.RANKINGS_URLS || '{}'); } catch {}
+  return Object.fromEntries(CATS.map((c) => [c, o[c] ? [].concat(o[c]) : DEFAULT_URLS[c]]));
+};
 
 // Bonus points by rank
 export const bonusFor = (rank) => (rank === 1 ? 4 : rank <= 3 ? 3 : rank <= 10 ? 2 : rank <= 25 ? 1 : 0);
@@ -45,11 +49,36 @@ export function matchPlayer(players, name) {
 
 // ---------- parsing ----------
 const decode = (s) => s.replace(/&amp;/g, '&').replace(/&#0?39;|&apos;/g, "'").replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"');
+const nameOf = (x) => x && (x.name || x.playerName || x.fullName || x.displayName || x.player?.fullName || x.player?.name || x.player?.displayName || x.player?.shortName);
+const rankOf = (x) => +(x.rank ?? x.position ?? x.pos ?? x.ranking ?? x.currentRank);
+// Walk any JSON value and return the longest array that looks like a ranking table
+function findRankingArray(v, depth = 0) {
+  let best = [];
+  if (!v || typeof v !== 'object' || depth > 12) return best;
+  if (Array.isArray(v)) {
+    const rows = v.filter((x) => x && typeof x === 'object' && typeof nameOf(x) === 'string' && Number.isFinite(rankOf(x)));
+    if (rows.length >= 5 && rows.length >= v.length * 0.6) best = rows;
+  }
+  for (const k of Object.keys(v)) { const r = findRankingArray(v[k], depth + 1); if (r.length > best.length) best = r; }
+  return best;
+}
+function fromJSON(j) {
+  return findRankingArray(j).map((x) => ({ name: nameOf(x), rank: rankOf(x), rating: Number.isFinite(+(x.rating ?? x.points)) ? +(x.rating ?? x.points) : undefined }))
+    .sort((a, b) => a.rank - b.rank);
+}
+
 export function parseRankings(text) {
   const t = String(text || '').trim(); if (!t) return [];
+  // JSON embedded in an HTML page (Next.js and similar)
+  if (t[0] === '<') {
+    for (const m of t.matchAll(/<script[^>]*type="application\/(?:ld\+)?json"[^>]*>([\s\S]*?)<\/script>/gi)) {
+      try { const rows = fromJSON(JSON.parse(m[1])); if (rows.length >= 5) return rows; } catch {}
+    }
+  }
   if (t[0] === '[' || t[0] === '{') {
     try {
       const j = JSON.parse(t);
+      const deep = fromJSON(j); if (deep.length >= 5) return deep;
       const arr = Array.isArray(j) ? j : Object.values(j).find(Array.isArray) || [];
       const out = arr.map((x, i) => ({
         name: x.name || x.playerName || x.player?.name || x.player?.fullName || x.fullName,
@@ -148,7 +177,15 @@ export async function refresh(players, { manual } = {}) {
   } else {
     const u = urls();
     for (const c of CATS) {
-      try { rankings[c] = parseRankings(await fetchText(u[c])); } catch (e) { errors.push(`${c}: ${e.message}`); }
+      const tried = [];
+      for (const url of u[c]) {
+        try {
+          const rows = parseRankings(await fetchText(url));
+          if (rows.length >= 5) { rankings[c] = rows; break; }
+          tried.push('no table found');
+        } catch (e) { tried.push(e.message); }
+      }
+      if (!rankings[c].length) errors.push(`${c}: ${[...new Set(tried)].join(', ')}`);
     }
   }
   const got = CATS.reduce((n, c) => n + rankings[c].length, 0);
