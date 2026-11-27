@@ -53,7 +53,7 @@
         ((st.probe || []).length ? '<details style="margin-top:12px"><summary class="muted">Data links found on the ICC page (send these to your developer)</summary><pre style="white-space:pre-wrap;font-size:11px">' + esc(st.probe.join('\n')) + '</pre></details>' : '') +
         ((st.last.unmatched || []).length ? '<p class="muted" style="font-size:12px">Not in the player pool: ' + esc(st.last.unmatched.join(', ')) + '</p>' : '') +
         '<details style="margin-top:14px"><summary class="muted">If the ICC fetch fails: paste the rankings</summary>' +
-        '<p class="muted" style="font-size:12px">One block per ranking, best first. Either one name per line, or lines like "1 Suryakumar Yadav 912".</p>' +
+        '<p class="muted" style="font-size:12px">Open the ICC or Cricbuzz T20I ranking page, select all (Ctrl+A), copy and paste the whole page into the matching box. A plain list of names (best first) or lines like "1 Abhishek Sharma 829" also work.</p>' +
         '<textarea id="m-bat" placeholder="Batting"></textarea><textarea id="m-bowl" placeholder="Bowling"></textarea><textarea id="m-ar" placeholder="All-rounders"></textarea>' +
         '<button id="rt-paste">Apply pasted rankings</button></details>';
       document.getElementById('rt-go').onclick = () => run({});

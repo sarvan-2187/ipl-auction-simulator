@@ -168,6 +168,18 @@ export function parseRankings(text, { pasted = false } = {}) {
     if (m) rows.push({ name: m[2].replace(/\s+[A-Z]{2,4}$/, '').trim(), rank: +m[1], rating: m[3] ? +m[3] : undefined });
   }
   if (rows.length >= 5) return rows;
+  // a whole page copied from the browser (Ctrl+A): rank, name, maybe team, rating on separate lines
+  if (pasted) {
+    const multi = []; const seen = new Set();
+    for (let i = 0; i < lines.length - 1; i++) {
+      const r = lines[i].match(/^(\d{1,3})(?:\s*[=▲▼↑↓+\-]\s*\d*)?$/);
+      if (!r) continue;
+      const name = lines.slice(i + 1, i + 4).find((l) => /^[A-Za-z][A-Za-z .'’-]{3,40}$/.test(l) && /\s/.test(l) && !/^(rank|player|team|rating|country)/i.test(l));
+      const rank = +r[1];
+      if (name && !seen.has(rank) && rank <= 100) { seen.add(rank); multi.push({ name, rank }); }
+    }
+    if (multi.length >= 5) return multi.sort((a, b) => a.rank - b.rank);
+  }
   // plain list of names, best first
   const names = lines.filter((l) => /^[A-Za-z][A-Za-z .'’-]{2,40}$/.test(l));
   return pasted && names.length >= 5 ? names.map((name, i) => ({ name, rank: i + 1 })) : rows;
